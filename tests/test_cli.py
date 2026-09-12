@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import click
 import pytest
 from typer.main import get_command
 from typer.testing import CliRunner
@@ -11,10 +12,18 @@ from oogiri.cli import DEFAULT_RESPONDENT_NUM, IMAGE_UNSUPPORTED_MESSAGE, app
 runner = CliRunner()
 
 
+def _plain(result: click.testing.Result) -> str:
+    """Rich の ANSI を除く。CI では `--theme` のハイフン間に色が入る。"""
+    blob = "\n".join(
+        part for part in (result.stdout, result.stderr, result.output) if part
+    )
+    return click.unstyle(blob)
+
+
 def test_generate_help_exits_zero() -> None:
     result = runner.invoke(app, ["generate", "--help"])
     assert result.exit_code == 0
-    output = result.stdout or result.output
+    output = _plain(result)
     assert "Usage" in output
     assert "--theme" in output
     assert "--respondent-num" in output
@@ -23,7 +32,7 @@ def test_generate_help_exits_zero() -> None:
 def test_generate_help_matches_srs_flags() -> None:
     result = runner.invoke(app, ["generate", "--help"])
     assert result.exit_code == 0
-    output = result.stdout or result.output
+    output = _plain(result)
     assert "--text" not in output
     assert "--image" not in output
     assert str(DEFAULT_RESPONDENT_NUM) in output
@@ -32,10 +41,7 @@ def test_generate_help_matches_srs_flags() -> None:
 def test_theme_is_required() -> None:
     result = runner.invoke(app, ["generate"])
     assert result.exit_code != 0
-    blob = "\n".join(
-        part for part in (result.stdout, result.stderr, result.output) if part
-    )
-    assert "theme" in blob.lower()
+    assert "theme" in _plain(result).lower()
 
 
 def test_theme_flag_is_accepted(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -77,22 +83,17 @@ def test_respondent_num_can_be_overridden(monkeypatch: pytest.MonkeyPatch) -> No
 def test_image_flag_exits_nonzero_without_image_output() -> None:
     result = runner.invoke(app, ["generate", "--theme", "お題", "--image"])
     assert result.exit_code != 0
-    blob = "\n".join(
-        part for part in (result.stdout, result.stderr, result.output) if part
-    )
+    blob = _plain(result)
     assert IMAGE_UNSUPPORTED_MESSAGE in blob
-    assert b"\x89PNG" not in blob.encode("utf-8", errors="replace")
-    assert b"\xff\xd8\xff" not in blob.encode("utf-8", errors="replace")
+    encoded = blob.encode("utf-8", errors="replace")
+    assert b"\x89PNG" not in encoded
+    assert b"\xff\xd8\xff" not in encoded
 
 
 def test_text_flag_is_not_provided() -> None:
-    help_result = runner.invoke(app, ["generate", "--help"])
-    help_output = help_result.stdout or help_result.output
+    help_output = _plain(runner.invoke(app, ["generate", "--help"]))
     assert "--text" not in help_output
 
     result = runner.invoke(app, ["generate", "--theme", "お題", "--text"])
     assert result.exit_code != 0
-    blob = "\n".join(
-        part for part in (result.stdout, result.stderr, result.output) if part
-    )
-    assert "no such option" in blob.lower() or "no such option" in str(result).lower()
+    assert "no such option" in _plain(result).lower()
