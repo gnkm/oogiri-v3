@@ -290,6 +290,20 @@ def test_simple_candidate_ids_are_namespaced_per_respondent(fake_llm) -> None:
             assert item.candidate_id.startswith(prefix)
 
 
+@pytest.mark.parametrize("bad_id", [None, "", "   ", 1, ["1"]])
+def test_invalid_original_candidate_id_is_rejected(fake_llm, bad_id: object) -> None:
+    memo = _memo()
+    roster = _roster(memo, n=1)
+    payload = _batch_payload("r1")
+    if bad_id is None:
+        del payload["candidates"][0]["candidate_id"]
+    else:
+        payload["candidates"][0]["candidate_id"] = bad_id
+    fake_llm.responses.append(json.dumps(payload, ensure_ascii=False))
+    with pytest.raises(RespondentError, match="スキーマ"):
+        respond(memo, roster)
+
+
 def test_duplicate_ids_in_one_respondent_are_still_rejected(fake_llm) -> None:
     memo = _memo()
     roster = _roster(memo, n=1)

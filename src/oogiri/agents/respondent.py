@@ -92,8 +92,14 @@ def _stamp_candidate(item: object, respondent_id: str) -> None:
 
 
 def _namespaced_id(raw_id: object, respondent_id: str) -> str:
-    original = raw_id.strip() if isinstance(raw_id, str) else ""
+    original = _require_nonempty_id(raw_id)
     return f"{respondent_id}:{original}"
+
+
+def _require_nonempty_id(raw_id: object) -> str:
+    if not isinstance(raw_id, str) or not raw_id.strip():
+        raise RespondentError("回答者の出力がスキーマに合いません")
+    return raw_id.strip()
 
 
 def _load_json_object(raw: str) -> dict[str, Any]:
