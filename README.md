@@ -27,7 +27,7 @@ uv run xenon src --max-absolute A --max-modules A --max-average A
 OpenRouter API キーは `config.toml` に書かず、Podman secret `openrouter_api_key_oogiri` で渡す。
 
 ```sh
-podman secret create openrouter_api_key_oogiri -
+op item get 'OpenRouter API Key - oogiri' --field '認証情報' --reveal | podman secret create openrouter_api_key_oogiri -
 podman build -t oogiri -f Containerfile
 podman run --rm --secret openrouter_api_key_oogiri oogiri --help
 ```
