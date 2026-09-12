@@ -212,9 +212,7 @@ def test_cli_generate_prints_only_polished_text(
 def test_cli_respondent_num_two(fake_llm, monkeypatch: pytest.MonkeyPatch) -> None:
     _enable_key(monkeypatch)
     _queue_pipeline(fake_llm, n=2)
-    result = runner.invoke(
-        app, ["generate", "--theme", THEME, "--respondent-num", "2"]
-    )
+    result = runner.invoke(app, ["generate", "--theme", THEME, "--respondent-num", "2"])
     assert result.exit_code == 0
     assert result.stdout.strip() == POLISHED_TEXT
     respondent_calls = [call for call in fake_llm.calls if call["role"] == "respondent"]

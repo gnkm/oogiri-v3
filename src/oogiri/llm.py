@@ -107,6 +107,7 @@ def _chat_payload(prompt: str, model: str, temperature: float) -> bytes:
         "model": _public_model_id(model),
         "temperature": temperature,
         "messages": [{"role": "user", "content": prompt}],
+        "response_format": {"type": "json_object"},
     }
     return json.dumps(body).encode("utf-8")
 
@@ -131,13 +132,50 @@ def _post_chat(base_url: str, api_key: str, payload: bytes) -> str:
         with urllib.request.urlopen(request, timeout=_TIMEOUT_SEC) as response:
             return response.read().decode("utf-8")
     except urllib.error.HTTPError as exc:
-        raise LLMError("OpenRouter がエラーを返しました") from exc
+        raise LLMError(_http_error_message(exc)) from exc
     except OSError as exc:
         raise LLMError("OpenRouter への接続に失敗しました") from exc
 
 
 def _chat_url(base_url: str) -> str:
     return base_url.rstrip("/") + _CHAT_PATH
+
+
+def _http_error_message(exc: urllib.error.HTTPError) -> str:
+    detail = _public_http_detail(exc)
+    if detail:
+        return f"OpenRouter がエラーを返しました: {detail}"
+    return "OpenRouter がエラーを返しました"
+
+
+def _public_http_detail(exc: urllib.error.HTTPError) -> str:
+    raw = exc.read().decode("utf-8", errors="replace")
+    data = _try_json_object(raw)
+    message = _error_message(data)
+    if message:
+        return message
+    return f"HTTP {exc.code}"
+
+
+def _try_json_object(raw: str) -> dict[str, Any] | None:
+    try:
+        data = json.loads(raw)
+    except json.JSONDecodeError:
+        return None
+    if isinstance(data, dict):
+        return data
+    return None
+
+
+def _error_message(data: dict[str, Any] | None) -> str:
+    if data is None:
+        return ""
+    error = data.get("error")
+    if isinstance(error, dict):
+        message = error.get("message")
+        if isinstance(message, str) and message.strip():
+            return message.strip()
+    return ""
 
 
 def _content_from_chat(raw: str) -> str:

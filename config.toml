@@ -5,21 +5,21 @@
 base_url = "https://openrouter.ai/api/v1"
 
 [agents.seated_writer]
-model = "openrouter/指定モデル"
+model = "openrouter/openai/gpt-4o-mini"
 temperature = 0.2
 
 [agents.coordinator]
-model = "openrouter/指定モデル"
+model = "openrouter/openai/gpt-4o-mini"
 temperature = 0.4
 
 [agents.respondent]
-model = "openrouter/指定モデル"
+model = "openrouter/openai/gpt-4o-mini"
 temperature = 0.9
 
 [agents.tsukkomi]
-model = "openrouter/指定モデル"
+model = "openrouter/openai/gpt-4o-mini"
 temperature = 0.2
 
 [agents.polisher]
-model = "openrouter/指定モデル"
+model = "openrouter/openai/gpt-4o-mini"
 temperature = 0.2
