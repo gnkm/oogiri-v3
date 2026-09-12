@@ -9,3 +9,8 @@ app = typer.Typer(
     help="お題を与えると、大喜利の回答を返す。",
     no_args_is_help=True,
 )
+
+
+@app.callback()
+def main() -> None:
+    """お題を与えると、大喜利の回答を返す。"""
