@@ -129,16 +129,31 @@ def _to_roster(
     respondent_num: int,
     config: AppConfig,
 ) -> Roster:
+    _require_n_unique_respondents(draft, respondent_num)
+    axes_by_name = _index_axes(draft.axes)
+    _ensure_drafts_differ(draft.respondents, axes_by_name)
+    specs = _build_specs(draft, axes_by_name, theme, analysis_memo, config)
+    return _roster_from_parts(axes_by_name, specs)
+
+
+def _require_n_unique_respondents(draft: _RosterDraft, respondent_num: int) -> None:
     if len(draft.respondents) != respondent_num:
         raise CoordinatorError("回答者数が n と一致しません")
     ids = [item.respondent_id for item in draft.respondents]
     if len(set(ids)) != len(ids):
         raise CoordinatorError("回答者 ID が重複しています")
-    axes_by_name = _index_axes(draft.axes)
-    _ensure_drafts_differ(draft.respondents, axes_by_name)
+
+
+def _build_specs(
+    draft: _RosterDraft,
+    axes_by_name: dict[str, StyleAxis],
+    theme: str,
+    analysis_memo: AnalysisMemo,
+    config: AppConfig,
+) -> tuple[RespondentSpec, ...]:
     respondent_template = load_prompt(RESPONDENT_PROMPT_FILE)
     memo_json = json.dumps(analysis_memo.model_dump(), ensure_ascii=False)
-    specs = tuple(
+    return tuple(
         _build_spec(
             item,
             axes_by_name,
@@ -149,6 +164,11 @@ def _to_roster(
         )
         for item in draft.respondents
     )
+
+
+def _roster_from_parts(
+    axes_by_name: dict[str, StyleAxis], specs: tuple[RespondentSpec, ...]
+) -> Roster:
     try:
         return Roster(axes=tuple(axes_by_name.values()), respondents=specs)
     except ValidationError as exc:
