@@ -33,7 +33,7 @@ uv run xenon src --max-absolute A --max-modules A --max-average A
 お題に対する単一回答の形を見る。
 
 ```sh
-uv run pytest tests/test_deepeval.py -k polished
+uv run pytest tests/test_deepeval.py -k polished_form
 ```
 
 ### おもしろさ評価（HumorQuality）

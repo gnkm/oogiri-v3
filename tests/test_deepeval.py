@@ -58,7 +58,7 @@ make_humor_metric = _humor_quality.make_humor_metric
 humor_test_case = _humor_quality.humor_test_case
 
 
-def test_deepeval_runs_on_polished_fixture() -> None:
+def test_polished_form_runs_on_fixture() -> None:
     """推敲後テキスト 1 案のフィクスチャに対し DeepEval が 1 本走る。"""
     metric = make_form_metric(judge_score=10)
     test_case = polished_test_case()
@@ -70,7 +70,7 @@ def test_deepeval_runs_on_polished_fixture() -> None:
     assert METRIC_NAME == "PolishedAnswerForm"
 
 
-def test_deepeval_below_threshold_fails_pytest() -> None:
+def test_polished_form_below_threshold_fails() -> None:
     """評価が閾値未満なら assert_test が失敗し、pytest は非 0 になりうる。"""
     metric = make_form_metric(judge_score=0, judge_reason="fail")
     with pytest.raises(AssertionError, match=r"threshold: 0\.5"):
@@ -125,7 +125,7 @@ def test_humor_quality_bad_golden_fails_below_threshold() -> None:
 
 
 @pytest.mark.live
-def test_deepeval_live_openrouter_on_polished_fixture() -> None:
+def test_polished_form_live_openrouter() -> None:
     """secret があるときだけ OpenRouter で同じメトリクスを実行する。"""
     api_key = os.environ.get(ENV_API_KEY, "").strip()
     if not api_key:
