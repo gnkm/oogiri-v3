@@ -86,13 +86,28 @@ def review(
 
 
 def _flatten_candidates(batches: Sequence[CandidateBatch]) -> tuple[Candidate, ...]:
-    candidates = tuple(item for batch in batches for item in batch.candidates)
+    candidates = _collect_candidates(batches)
+    _reject_empty_candidates(candidates)
+    _reject_duplicate_ids(candidates)
+    return candidates
+
+
+def _collect_candidates(batches: Sequence[CandidateBatch]) -> tuple[Candidate, ...]:
+    items: list[Candidate] = []
+    for batch in batches:
+        items.extend(batch.candidates)
+    return tuple(items)
+
+
+def _reject_empty_candidates(candidates: tuple[Candidate, ...]) -> None:
     if not candidates:
         raise TsukkomiError("審査する案がありません")
+
+
+def _reject_duplicate_ids(candidates: tuple[Candidate, ...]) -> None:
     ids = [item.candidate_id for item in candidates]
-    if len(ids) != len(set(ids)):
+    if len(set(ids)) != len(ids):
         raise TsukkomiError("案 ID が重複しています")
-    return candidates
 
 
 def _fill_placeholders(template: str, values: dict[str, str]) -> str:

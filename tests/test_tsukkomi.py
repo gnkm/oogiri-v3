@@ -308,7 +308,11 @@ def test_missing_note_is_rejected(fake_llm) -> None:
     batch = _batch("r1")
     candidates = _all_candidates(batch)
     payload = _shortlist_payload(candidates)
-    payload["notes"] = payload["notes"][1:]
+    payload["notes"] = [
+        note
+        for note in payload["notes"]
+        if note["candidate_id"] != candidates[-1].candidate_id
+    ]
     _queue_review(fake_llm, payload)
     with pytest.raises(TsukkomiError, match="残存全案"):
         review(THEME, _memo(), (batch,))
