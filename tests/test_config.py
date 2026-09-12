@@ -98,6 +98,22 @@ def test_missing_config_file_fails(tmp_path: Path) -> None:
         load_config(tmp_path / "missing.toml")
 
 
+def test_unreadable_config_is_config_error(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    path = _write_toml(tmp_path / "config.toml", _VALID_TOML)
+    original_open = Path.open
+
+    def guarded_open(self: Path, *args: object, **kwargs: object):
+        if self == path:
+            raise PermissionError("denied")
+        return original_open(self, *args, **kwargs)
+
+    monkeypatch.setattr(Path, "open", guarded_open)
+    with pytest.raises(ConfigError, match="読めません"):
+        load_config(path)
+
+
 def test_load_config_does_not_write_api_key(tmp_path: Path) -> None:
     path = _write_toml(tmp_path / "config.toml", _VALID_TOML)
     before = path.read_text(encoding="utf-8")

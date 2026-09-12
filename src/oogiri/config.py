@@ -83,12 +83,18 @@ def _read_toml(config_path: Path) -> dict[str, Any]:
     if not config_path.is_file():
         raise ConfigError(f"設定ファイルがありません: {config_path}")
     try:
-        with config_path.open("rb") as fh:
-            return tomllib.load(fh)
+        return _load_toml_bytes(config_path)
     except tomllib.TOMLDecodeError as exc:
         raise ConfigError(
             f"設定ファイルを TOML として読めません: {config_path}"
         ) from exc
+    except OSError as exc:
+        raise ConfigError(f"設定ファイルを読めません: {config_path}") from exc
+
+
+def _load_toml_bytes(config_path: Path) -> dict[str, Any]:
+    with config_path.open("rb") as fh:
+        return tomllib.load(fh)
 
 
 def _validate_config(config_path: Path, data: object) -> AppConfig:

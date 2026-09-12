@@ -11,6 +11,7 @@ from oogiri.secrets import (
     ENV_API_KEY,
     PODMAN_SECRET_NAME,
     MissingAPIKeyError,
+    SecretReadError,
     load_openrouter_api_key,
     require_openrouter_api_key,
 )
@@ -68,6 +69,25 @@ def test_podman_secret_wins_over_env(tmp_path: Path) -> None:
 def test_generation_fails_without_api_key(tmp_path: Path) -> None:
     with pytest.raises(MissingAPIKeyError, match="openrouter_api_key_oogiri"):
         require_openrouter_api_key(secret_dir=tmp_path, environ={})
+
+
+def test_unreadable_secret_does_not_fall_back_to_env(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    secret_path = _write_secret(tmp_path, TEST_KEY)
+    original = Path.read_text
+
+    def guarded_read(self: Path, *args: object, **kwargs: object) -> str:
+        if self == secret_path:
+            raise PermissionError("denied")
+        return original(self, *args, **kwargs)
+
+    monkeypatch.setattr(Path, "read_text", guarded_read)
+    with pytest.raises(SecretReadError, match="openrouter_api_key_oogiri"):
+        load_openrouter_api_key(
+            secret_dir=tmp_path,
+            environ={ENV_API_KEY: "from-env"},
+        )
 
 
 def test_empty_secret_and_env_fail(tmp_path: Path) -> None:

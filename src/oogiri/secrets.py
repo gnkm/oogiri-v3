@@ -16,7 +16,11 @@ DEFAULT_SECRET_DIR = Path("/run/secrets")
 ENV_API_KEY = "OPENROUTER_API_KEY"
 
 
-class MissingAPIKeyError(Exception):
+class SecretError(Exception):
+    """秘密の取得に失敗した。メッセージにキーを含めない。"""
+
+
+class MissingAPIKeyError(SecretError):
     """生成に必要な OpenRouter API キーが無い。メッセージにキーを含めない。"""
 
     def __init__(self) -> None:
@@ -24,6 +28,16 @@ class MissingAPIKeyError(Exception):
             "OpenRouter API キーが見つかりません。"
             f" Podman secret `{PODMAN_SECRET_NAME}` を投入するか、"
             f"試験用に環境変数 {ENV_API_KEY} を設定してください。"
+        )
+
+
+class SecretReadError(SecretError):
+    """secret ファイルはあるが読めない。環境変数へフォールバックしない。"""
+
+    def __init__(self) -> None:
+        super().__init__(
+            f"Podman secret `{PODMAN_SECRET_NAME}` を読めません。"
+            " 環境変数へのフォールバックは行いません。"
         )
 
 
@@ -58,6 +72,6 @@ def _read_podman_secret(secret_dir: Path) -> str | None:
         return None
     try:
         value = path.read_text(encoding="utf-8").strip()
-    except OSError:
-        return None
+    except OSError as exc:
+        raise SecretReadError() from exc
     return value or None
