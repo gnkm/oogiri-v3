@@ -5,6 +5,7 @@ description = "お題を与えると、大喜利の回答を返す CLI"
 readme = "README.md"
 requires-python = ">=3.13,<3.14"
 dependencies = [
+    "crewai>=1.15.21",
     "pydantic>=2.11",
     "typer>=0.16",
 ]
