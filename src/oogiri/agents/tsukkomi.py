@@ -32,7 +32,7 @@ class _NoteDraft(BaseModel):
     candidate_id: str = Field(min_length=1)
     tsukkomi: str = Field(min_length=1)
     dropped: bool
-    score: float
+    score: float = Field(ge=0, le=10, allow_inf_nan=False)
 
     @field_validator("candidate_id", "tsukkomi", mode="before")
     @classmethod

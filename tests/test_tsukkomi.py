@@ -204,6 +204,32 @@ def test_empty_tsukkomi_is_rejected() -> None:
         )
 
 
+@pytest.mark.parametrize("score", [0.0, 10.0, 8])
+def test_score_in_range_is_accepted(score: float) -> None:
+    note = TsukkomiNote.model_validate(
+        {
+            "candidate_id": "r1-1",
+            "tsukkomi": "ツッコミ",
+            "dropped": False,
+            "score": score,
+        }
+    )
+    assert note.score == score
+
+
+@pytest.mark.parametrize("score", [-0.1, 10.1, float("nan"), float("inf")])
+def test_score_out_of_range_is_rejected(score: float) -> None:
+    with pytest.raises(ValidationError):
+        TsukkomiNote.model_validate(
+            {
+                "candidate_id": "r1-1",
+                "tsukkomi": "ツッコミ",
+                "dropped": False,
+                "score": score,
+            }
+        )
+
+
 def test_extra_fields_on_shortlist_are_rejected() -> None:
     candidates = _all_candidates(_batch("r1"))
     payload = _shortlist_payload(candidates)

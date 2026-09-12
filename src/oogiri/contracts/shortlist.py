@@ -15,6 +15,7 @@ from pydantic import (
 from oogiri.contracts.candidates import Candidate
 
 NonEmptyStr = Annotated[str, StringConstraints(min_length=1, strip_whitespace=True)]
+Score = Annotated[float, Field(ge=0, le=10, allow_inf_nan=False)]
 
 Selected = Annotated[tuple[Candidate, ...], Field(min_length=5, max_length=5)]
 Notes = Annotated[tuple["TsukkomiNote", ...], Field(min_length=5)]
@@ -28,7 +29,7 @@ class TsukkomiNote(BaseModel):
     candidate_id: NonEmptyStr
     tsukkomi: NonEmptyStr
     dropped: bool
-    score: float
+    score: Score
 
 
 class Shortlist(BaseModel):
