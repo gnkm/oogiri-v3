@@ -43,12 +43,12 @@ select = ["E", "F", "I", "UP", "B", "W"]
 [tool.importlinter]
 root_packages = ["oogiri"]
 
-# ARCHITECTURE.md: CLI がエントリ、llm はゲートウェイ。下位は上位を import しない。
+# ARCHITECTURE.md: CLI がエントリ。設定と秘密は独立。llm はゲートウェイ。
 [[tool.importlinter.contracts]]
-name = "CLI は LLM ゲートウェイの上に置く"
+name = "CLI は設定・秘密・LLM ゲートウェイの上に置く"
 type = "layers"
 layers = [
     "oogiri.cli",
+    "oogiri.config | oogiri.secrets",
     "oogiri.llm",
 ]
-

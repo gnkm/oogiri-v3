@@ -22,6 +22,16 @@ uv run xenon src --max-absolute A --max-modules A --max-average A
 
 配置はコード `src/`、プロンプト `prompts/`、設定 `config.toml`。秘密は設定ファイルに書かない。
 
+## 製品実行（Podman）
+
+OpenRouter API キーは `config.toml` に書かず、Podman secret `openrouter_api_key_oogiri` で渡す。
+
+```sh
+podman secret create openrouter_api_key_oogiri -
+podman build -t oogiri -f Containerfile
+podman run --rm --secret openrouter_api_key_oogiri oogiri --help
+```
+
 正本: [`docs/source-of-truth/srs-mvp.md`](docs/source-of-truth/srs-mvp.md)
 
 ## Cloud Agents
