@@ -45,6 +45,7 @@ select = ["E", "F", "I", "UP", "B", "W"]
 
 [tool.importlinter]
 root_packages = ["oogiri"]
+include_external_packages = true
 
 # ARCHITECTURE.md: CLI がエントリ。設定と秘密は独立。llm はゲートウェイ。
 [[tool.importlinter.contracts]]
@@ -55,3 +56,10 @@ layers = [
     "oogiri.config | oogiri.secrets",
     "oogiri.llm",
 ]
+
+# ARCHITECTURE.md: 評価は tests/。generate 経路に DeepEval を載せない。
+[[tool.importlinter.contracts]]
+name = "製品コードは DeepEval を import しない"
+type = "forbidden"
+source_modules = ["oogiri"]
+forbidden_modules = ["deepeval"]

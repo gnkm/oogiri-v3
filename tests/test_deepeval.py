@@ -11,9 +11,10 @@
 
 from __future__ import annotations
 
+import importlib.util
 import os
-import sys
 from pathlib import Path
+from types import ModuleType
 
 os.environ.setdefault("DEEPEVAL_TELEMETRY_OPT_OUT", "1")
 os.environ.setdefault("DEEPEVAL_DISABLE_DOTENV", "1")
@@ -23,20 +24,23 @@ from deepeval import assert_test
 
 from oogiri.secrets import ENV_API_KEY
 
-_EVAL_DIR = Path(__file__).resolve().parent / "eval"
-if str(_EVAL_DIR) not in sys.path:
-    sys.path.insert(0, str(_EVAL_DIR))
 
-from polished_form import (  # noqa: E402
-    METRIC_NAME,
-    THRESHOLD,
-    make_form_metric,
-    openrouter_model_id,
-    polished_test_case,
-)
+def _load_polished_form() -> ModuleType:
+    path = Path(__file__).resolve().parent / "eval" / "polished_form.py"
+    spec = importlib.util.spec_from_file_location("oogiri_eval_polished_form", path)
+    if spec is None or spec.loader is None:
+        raise ImportError(f"cannot load {path}")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
 
-ROOT = Path(__file__).resolve().parents[1]
-SRC = ROOT / "src"
+
+_polished_form = _load_polished_form()
+METRIC_NAME = _polished_form.METRIC_NAME
+THRESHOLD = _polished_form.THRESHOLD
+make_form_metric = _polished_form.make_form_metric
+openrouter_model_id = _polished_form.openrouter_model_id
+polished_test_case = _polished_form.polished_test_case
 
 
 def test_deepeval_runs_on_polished_fixture() -> None:
@@ -58,13 +62,6 @@ def test_deepeval_below_threshold_fails_pytest() -> None:
     assert metric.success is False
     assert metric.score is not None
     assert metric.score < THRESHOLD
-
-
-def test_generate_path_does_not_import_deepeval() -> None:
-    """評価は generate の標準出力経路に載せない（ARCHITECTURE.md）。"""
-    for path in SRC.rglob("*.py"):
-        text = path.read_text(encoding="utf-8")
-        assert "deepeval" not in text, path
 
 
 def test_openrouter_prefix_is_stripped() -> None:
