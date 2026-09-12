@@ -81,8 +81,19 @@ def _overwrite_candidate_respondent_ids(items: object, respondent_id: str) -> No
     if not isinstance(items, list):
         return
     for item in items:
-        if isinstance(item, dict):
-            item["respondent_id"] = respondent_id
+        _stamp_candidate(item, respondent_id)
+
+
+def _stamp_candidate(item: object, respondent_id: str) -> None:
+    if not isinstance(item, dict):
+        return
+    item["respondent_id"] = respondent_id
+    item["candidate_id"] = _namespaced_id(item.get("candidate_id"), respondent_id)
+
+
+def _namespaced_id(raw_id: object, respondent_id: str) -> str:
+    original = raw_id.strip() if isinstance(raw_id, str) else ""
+    return f"{respondent_id}:{original}"
 
 
 def _load_json_object(raw: str) -> dict[str, Any]:

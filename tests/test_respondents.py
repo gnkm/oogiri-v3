@@ -266,15 +266,37 @@ def test_fewer_than_seven_from_llm_is_rejected(fake_llm) -> None:
         respond(memo, roster)
 
 
-def test_duplicate_candidate_ids_across_respondents_are_rejected(fake_llm) -> None:
+def test_simple_candidate_ids_are_namespaced_per_respondent(fake_llm) -> None:
     memo = _memo()
     roster = _roster(memo)
     shared = {
         "respondent_id": "ignored",
-        "candidates": [_candidate("shared", i) for i in range(7)],
+        "candidates": [
+            {
+                "candidate_id": str(index),
+                "respondent_id": "ignored",
+                "text": f"案{index}",
+            }
+            for index in range(1, 8)
+        ],
     }
     fake_llm.responses.extend([json.dumps(shared, ensure_ascii=False)] * 3)
-    with pytest.raises(RespondentError, match="重複"):
+    batches = respond(memo, roster)
+    ids = [item.candidate_id for batch in batches for item in batch.candidates]
+    assert len(ids) == len(set(ids))
+    for spec, batch in zip(roster.respondents, batches, strict=True):
+        prefix = f"{spec.respondent_id}:"
+        for item in batch.candidates:
+            assert item.candidate_id.startswith(prefix)
+
+
+def test_duplicate_ids_in_one_respondent_are_still_rejected(fake_llm) -> None:
+    memo = _memo()
+    roster = _roster(memo, n=1)
+    payload = _batch_payload("r1")
+    payload["candidates"][1]["candidate_id"] = payload["candidates"][0]["candidate_id"]
+    fake_llm.responses.append(json.dumps(payload, ensure_ascii=False))
+    with pytest.raises(RespondentError, match="スキーマ"):
         respond(memo, roster)
 
 
