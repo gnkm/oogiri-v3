@@ -9,8 +9,10 @@ import json
 import urllib.error
 import urllib.request
 from typing import Any
+from urllib.parse import ParseResult, urlparse
 
 _OPENROUTER_PREFIX = "openrouter/"
+_OPENROUTER_HOST = "openrouter.ai"
 _CHAT_PATH = "/chat/completions"
 _TIMEOUT_SEC = 120
 _CrewAILLM: type | None = None
@@ -129,16 +131,58 @@ def _post_chat(base_url: str, api_key: str, payload: bytes) -> str:
         },
     )
     try:
-        with urllib.request.urlopen(request, timeout=_TIMEOUT_SEC) as response:
-            return response.read().decode("utf-8")
+        return _open_without_redirect(request)
     except urllib.error.HTTPError as exc:
         raise LLMError(_http_error_message(exc)) from exc
     except OSError as exc:
         raise LLMError("OpenRouter への接続に失敗しました") from exc
 
 
+class _RejectRedirect(urllib.request.HTTPRedirectHandler):
+    """資格情報付きリクエストを別ホストへ送らない。"""
+
+    def redirect_request(self, *args: object, **kwargs: object) -> None:
+        raise LLMError("OpenRouter からのリダイレクトは許可しません")
+
+
+def _open_without_redirect(request: urllib.request.Request) -> str:
+    opener = urllib.request.build_opener(_RejectRedirect())
+    with opener.open(request, timeout=_TIMEOUT_SEC) as response:
+        return response.read().decode("utf-8")
+
+
 def _chat_url(base_url: str) -> str:
-    return base_url.rstrip("/") + _CHAT_PATH
+    origin = _require_openrouter_https(base_url)
+    return origin + _CHAT_PATH
+
+
+def _require_openrouter_https(base_url: str) -> str:
+    parsed = urlparse(base_url)
+    _require_https_scheme(parsed)
+    _require_openrouter_host(parsed)
+    _reject_url_userinfo(parsed)
+    _reject_non_https_port(parsed)
+    return base_url.rstrip("/")
+
+
+def _require_https_scheme(parsed: ParseResult) -> None:
+    if parsed.scheme != "https":
+        raise LLMError("OpenRouter の URL は HTTPS である必要があります")
+
+
+def _require_openrouter_host(parsed: ParseResult) -> None:
+    if parsed.hostname != _OPENROUTER_HOST:
+        raise LLMError("OpenRouter 以外のホストへは接続しません")
+
+
+def _reject_url_userinfo(parsed: ParseResult) -> None:
+    if parsed.username or parsed.password:
+        raise LLMError("OpenRouter の URL にユーザー情報を含めてはいけません")
+
+
+def _reject_non_https_port(parsed: ParseResult) -> None:
+    if parsed.port not in (None, 443):
+        raise LLMError("OpenRouter の URL のポートが不正です")
 
 
 def _http_error_message(exc: urllib.error.HTTPError) -> str:

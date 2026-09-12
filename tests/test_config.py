@@ -121,3 +121,24 @@ def test_load_config_does_not_write_api_key(tmp_path: Path) -> None:
     after = path.read_text(encoding="utf-8")
     assert after == before
     assert "api_key" not in after.lower()
+
+
+@pytest.mark.parametrize(
+    "base_url",
+    [
+        "http://openrouter.ai/api/v1",
+        "https://evil.example/api/v1",
+        "https://openrouter.ai.evil.example/api/v1",
+        "https://user:pass@openrouter.ai/api/v1",
+        "https://openrouter.ai:8443/api/v1",
+    ],
+)
+def test_non_openrouter_base_url_is_rejected(tmp_path: Path, base_url: str) -> None:
+    body = _VALID_TOML.replace(
+        'base_url = "https://openrouter.ai/api/v1"',
+        f'base_url = "{base_url}"',
+    )
+    path = _write_toml(tmp_path / "config.toml", body)
+    with pytest.raises(ConfigError, match="検証に失敗") as exc_info:
+        load_config(path)
+    assert "api_key" not in str(exc_info.value).lower()
