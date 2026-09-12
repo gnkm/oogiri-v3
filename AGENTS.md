@@ -33,6 +33,7 @@ Cursor Cloud Agents 向けの作業ルール。アプリ固有のルールはプ
 
 - 実装の正本は `docs/source-of-truth/srs-mvp.md`。着手前に該当要件 ID を読む。
 - 実装 Issue の着手前にリポジトリルートの `ARCHITECTURE.md` を読む。本文書は how（モジュール境界・データの流れ・配置）を定め、SRS の what と矛盾させない。衝突する場合は SRS を優先する。
+- プロンプト契約は `docs/prompt-design.md` とする。着手前に読む。入力・出力スキーマ・禁止事項・温度の扱い・`prompts/` のファイル名は本文書に従い、実装 Issue ごとに割らない。衝突する場合は SRS を優先する。
 - MVP の出力はテキストのみ。画像出力（`--image`）は対象外。指定されたら非 0 で終える。
 - 画像を含む製品要件は後続。`docs/source-of-truth/srs.md` または `docs/reference/srs.md` が無い場合は人間に Issue で依頼する。自分で source-of-truth に作らない。
 
