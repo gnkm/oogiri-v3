@@ -2,6 +2,21 @@
 
 お題を与えると、大喜利の回答を返す。
 
+## 開発
+
+Python 3.13 と [uv](https://docs.astral.sh/uv/) を使う。`uv pip` は使わない。
+
+```sh
+uv python install 3.13
+uv sync --all-groups
+uv run oogiri --help
+uv run pytest
+```
+
+配置はコード `src/`、プロンプト `prompts/`、設定 `config.toml`。秘密は設定ファイルに書かない。
+
+正本: [`docs/source-of-truth/srs-mvp.md`](docs/source-of-truth/srs-mvp.md)
+
 ## Cloud Agents
 
 実装は GitHub Feature Issue を単位に、Cursor Cloud Agents で進める。
@@ -11,8 +26,6 @@
 3. 成功した Build があることを確認する。
 4. 未完了の **Blocked by** が無い Feature Issue を 1 件選び、Cloud Agent に渡す（GitHub では Issue に `@cursor`）。
 5. PR が来たら `verifier` が Issue の **検証** 欄を実行してからマージする。
-
-正本: [`docs/source-of-truth/srs-mvp.md`](docs/source-of-truth/srs-mvp.md)
 
 ## ライセンス
 
