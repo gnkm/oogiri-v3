@@ -132,9 +132,7 @@ def test_roster_has_required_fields() -> None:
 
 def test_axes_count_is_not_fixed() -> None:
     one = StyleAxis(name="極端な具体", description="細部を拾う")
-    four = [
-        StyleAxis(name=f"軸{i}", description=f"説明{i}") for i in range(1, 5)
-    ]
+    four = [StyleAxis(name=f"軸{i}", description=f"説明{i}") for i in range(1, 5)]
     spec = RespondentSpec(
         respondent_id="r1",
         axis=one,
@@ -254,12 +252,13 @@ def test_seed_example_axes_are_not_forced_in_code() -> None:
     blob = (ROOT / "config.toml").read_text(encoding="utf-8")
     for path in (ROOT / "src").rglob("*.py"):
         blob += path.read_text(encoding="utf-8")
-    for name in SEED_EXAMPLE_AXES:
-        assert name not in blob
+    assert "地味にリアル" not in blob
+    assert '"ずらし"' not in blob and "'ずらし'" not in blob
+    assert '"ワード"' not in blob and "'ワード'" not in blob
     prompt = PROMPT_PATH.read_text(encoding="utf-8")
     assert "次の三軸" not in prompt
-    for name in SEED_EXAMPLE_AXES:
-        assert name not in prompt
+    assert "地味にリアル" not in prompt
+    assert "から選べ" not in prompt
 
 
 def test_system_prompt_uses_respondent_frame(fake_llm) -> None:
@@ -281,7 +280,9 @@ def test_system_prompt_uses_respondent_frame(fake_llm) -> None:
 def test_coordinate_does_not_write_prompts(fake_llm) -> None:
     before_coordinator = PROMPT_PATH.read_text(encoding="utf-8")
     before_respondent = RESPONDENT_PROMPT_PATH.read_text(encoding="utf-8")
-    src_py = {path: path.read_text(encoding="utf-8") for path in (ROOT / "src").rglob("*.py")}
+    src_py = {
+        path: path.read_text(encoding="utf-8") for path in (ROOT / "src").rglob("*.py")
+    }
     payload = _valid_roster_payload(n=3)
     fake_llm.responses.append(json.dumps(payload, ensure_ascii=False))
     coordinate("お題", _memo())
