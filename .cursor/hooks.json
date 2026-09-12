@@ -15,6 +15,10 @@
     ],
     "preToolUse": [
       {
+        "command": ".cursor/hooks/guard-write.sh",
+        "failClosed": true
+      },
+      {
         "command": ".cursor/hooks/audit.sh",
         "failClosed": true
       }

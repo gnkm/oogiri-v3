@@ -43,6 +43,19 @@ if printf '%s' "$cmd" | grep -qE 'git[[:space:]]+push([[:space:]].*)?[[:space:]:
   deny_agent "保護ブランチへの直接 push は禁止されています。feature ブランチと PR を使ってください。"
 fi
 
+# docs/source-of-truth/ へのシェル経由の改変をブロックする。
+# パスがコマンド文字列に含まれるだけでは拒否しない（コミットメッセージ等の誤検知を避ける）。
+# 破壊的コマンドがコマンド位置にあるとき、またはリダイレクト先が保護パスのときだけ拒否する。
+if printf '%s' "$cmd" | grep -qE '(^|[^[:alnum:]_-])docs/source-of-truth([/[:space:]"'\'']|$)'; then
+  if printf '%s' "$cmd" | grep -qE '(^|[;&|]|&&|\|\|)[[:space:]]*(rm|rmdir|unlink|mv|cp|mkdir|touch|truncate|chmod|chown|ln|install|dd|shred|sed[[:space:]]+-[^[:space:]]*i|perl[[:space:]]+-[^[:space:]]*i|git[[:space:]]+(rm|mv|checkout|restore|reset|clean))([[:space:]]|$)'; then
+    deny_agent "docs/source-of-truth/ は読み取り専用です。シェルでの改変・削除・移動は禁止されています。読み取りのみ許可します。"
+  fi
+  # tee は引数より後ろに保護パスがあるときだけ拒否する（| tee /tmp への読み出しコピーは許可）。
+  if printf '%s' "$cmd" | grep -qE '(>|>>|[|][[:space:]]*tee([[:space:]]|$)).*docs/source-of-truth'; then
+    deny_agent "docs/source-of-truth/ への書き込みリダイレクトは禁止されています。"
+  fi
+fi
+
 # サンドボックス外での実行を記録する（ブロックはしない）
 if [ "$sandboxed" = "false" ]; then
   printf '%s UNSANDBOXED: %s\n' "$(date -Iseconds)" "$cmd" \

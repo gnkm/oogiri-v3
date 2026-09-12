@@ -15,6 +15,9 @@
 **/AGENTS.md            @gnkm
 **/.cursor/             @gnkm
 
+# ソース・オブ・トゥルース（人間のみ編集。AI は read-only）
+/docs/source-of-truth/  @gnkm
+
 # 承認・検証の基準
 /.github/               @gnkm
 /.github/CODEOWNERS     @gnkm

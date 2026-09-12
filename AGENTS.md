@@ -2,6 +2,12 @@
 
 Cursor Cloud Agents 向けの作業ルール。アプリ固有のルールはプロジェクト側で追記する。
 
+## 編集禁止（読み取り専用）
+
+- `docs/source-of-truth/` 配下はソース・オブ・トゥルース。AI は読んでよいが、編集・削除・リネーム・移動は禁止。
+- フロントマターに `ai.editable: false`（または `ai_editable: false`）があるファイルも同様。
+- 内容変更が必要なら Issue で人間に依頼し、自分では触らない。
+
 ## タスク管理
 
 - タスクと完了基準は **GitHub Issue** のみ。着手前に対象 Issue を読む（`gh issue view`）。
