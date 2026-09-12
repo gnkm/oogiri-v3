@@ -19,6 +19,8 @@ build-backend = "uv_build"
 
 [dependency-groups]
 dev = [
+    # CrewAI の chromadb が posthog<6 のため 3.9.7+ / 4.x は解けない
+    "deepeval==3.9.6",
     "import-linter>=2.15",
     "pytest>=8.3",
     "radon>=6.0.1",
@@ -31,7 +33,7 @@ testpaths = ["tests"]
 markers = [
     "live: live OpenRouter / DeepEval（secret があるときだけ。既定の収集から外す）",
 ]
-addopts = ["-m", "not live"]
+addopts = ["-m", "not live", "-p", "no:deepeval"]
 
 [tool.ruff]
 target-version = "py313"
