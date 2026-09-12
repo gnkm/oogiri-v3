@@ -11,7 +11,11 @@
       "codeload.github.com",
       "api.github.com",
       "*.githubusercontent.com",
-      "ghcr.io"
+      "ghcr.io",
+      "astral.sh",
+      "*.astral.sh",
+      "openrouter.ai",
+      "*.openrouter.ai"
     ]
   }
 }

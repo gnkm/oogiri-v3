@@ -1,0 +1,13 @@
+---
+description: Python 3.13 / uv / 本リポジトリの実装制約
+alwaysApply: true
+---
+
+# 実装スタック
+
+- 言語は Python 3.13。パッケージ管理は uv。`uv pip` は使わない。
+- CLI は Typer。設定とエージェント間ペイロードは Pydantic。マルチエージェントは CrewAI。
+- コードは `src/`、プロンプトは `prompts/`、設定は `config.toml`。プロンプト本文を `src/` に埋め込まない。
+- 製品の実行形態は Podman と `podman secret` 名 `openrouter_api_key_oogiri`。
+- Cloud Agent の VM は Docker。検証の主経路は `uv run pytest`。ライブの OpenRouter 呼び出しは secret `OPENROUTER_API_KEY` があるときだけ。
+- 正本は `docs/source-of-truth/srs-mvp.md`。編集・削除・リネーム・移動は禁止。

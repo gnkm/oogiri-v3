@@ -27,6 +27,8 @@
 # 例: pyproject.toml / .importlinter / eslint.config.js / .dependency-cruiser.js
 #     .golangci.yml / .rubocop.yml / deptrac.yaml / clippy.toml
 # {{LINT_CONFIG_FILES}}   @gnkm
+/pyproject.toml         @gnkm
+/uv.lock                @gnkm
 
 # git hooks（無効化・緩和をレビューに通す）
 /lefthook.yml           @gnkm

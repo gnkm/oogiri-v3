@@ -1,0 +1,8 @@
+{
+  "name": "oogiri-v3",
+  "build": {
+    "dockerfile": "Dockerfile"
+  },
+  "install": "if [ -f pyproject.toml ]; then uv sync --all-groups; fi",
+  "agentCanUpdateSnapshot": true
+}

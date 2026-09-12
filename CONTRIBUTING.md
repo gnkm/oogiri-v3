@@ -29,6 +29,7 @@
 - すべて **小文字**、単語区切りはハイフン (`-`) を使う。アンダースコア・キャメルケースは使わない。
 - スコープは **目的が一目で分かる** 短い英語にする (例: `answer-agent`, `director`, `evaluation`, `similarity`, `cli`)。
 - `main` から派生し、レビュー → マージ後にブランチは削除する。
+- Cloud Agents は Feature Issue を 1 件ずつ実装し、`Closes #N` で PR を紐づける。
 - 派生先 (`base`) を `main` 以外に設定する場合 (Stacked PR) は、PR 説明にその旨と上流ブランチを明記する。
 
 ## コミットメッセージ規約
