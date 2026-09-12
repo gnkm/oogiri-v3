@@ -1,0 +1,25 @@
+# エージェント設定。秘密（API キー）は書かない。
+# モデル ID の正は本ファイルとする。コードに埋め込まない。
+
+[openrouter]
+base_url = "https://openrouter.ai/api/v1"
+
+[agents.seated_writer]
+model = "openrouter/指定モデル"
+temperature = 0.2
+
+[agents.coordinator]
+model = "openrouter/指定モデル"
+temperature = 0.4
+
+[agents.respondent]
+model = "openrouter/指定モデル"
+temperature = 0.9
+
+[agents.tsukkomi]
+model = "openrouter/指定モデル"
+temperature = 0.2
+
+[agents.polisher]
+model = "openrouter/指定モデル"
+temperature = 0.2

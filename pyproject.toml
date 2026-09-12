@@ -1,0 +1,29 @@
+[project]
+name = "oogiri"
+version = "0.1.0"
+description = "お題を与えると、大喜利の回答を返す CLI"
+readme = "README.md"
+requires-python = ">=3.13,<3.14"
+dependencies = [
+    "pydantic>=2.11",
+    "typer>=0.16",
+]
+
+[project.scripts]
+oogiri = "oogiri.cli:app"
+
+[build-system]
+requires = ["uv_build>=0.12.13,<0.13.0"]
+build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "pytest>=8.3",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = [
+    "live: live OpenRouter / DeepEval（secret があるときだけ。既定の収集から外す）",
+]
+addopts = ["-m", "not live"]
