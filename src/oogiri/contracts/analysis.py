@@ -8,8 +8,8 @@ from pydantic import BaseModel, ConfigDict, Field, StringConstraints
 
 NonEmptyStr = Annotated[str, StringConstraints(min_length=1, strip_whitespace=True)]
 
-Premises = Annotated[list[NonEmptyStr], Field(min_length=3, max_length=3)]
-BanalIdeas = Annotated[list[NonEmptyStr], Field(min_length=5, max_length=5)]
+Premises = Annotated[tuple[NonEmptyStr, ...], Field(min_length=3, max_length=3)]
+BanalIdeas = Annotated[tuple[NonEmptyStr, ...], Field(min_length=5, max_length=5)]
 
 
 class AnalysisMemo(BaseModel):

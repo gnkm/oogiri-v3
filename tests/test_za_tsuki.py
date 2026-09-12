@@ -102,6 +102,16 @@ def test_memo_is_identical_for_every_respondent() -> None:
     assert copies[0] == copies[1] == copies[2] == memo
 
 
+def test_shared_memo_collections_are_immutable() -> None:
+    memo = AnalysisMemo.model_validate(_valid_payload())
+    assert isinstance(memo.premises, tuple)
+    assert isinstance(memo.banal_ideas, tuple)
+    with pytest.raises(AttributeError):
+        memo.premises.append("追加の前提")  # type: ignore[attr-defined]
+    with pytest.raises(AttributeError):
+        memo.banal_ideas.append("追加の凡庸案")  # type: ignore[attr-defined]
+
+
 def test_seated_writer_temperature_is_low_in_config() -> None:
     cfg = load_config(ROOT / "config.toml")
     assert cfg.agents.seated_writer.temperature == 0.2
