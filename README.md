@@ -1,5 +1,7 @@
 # 大喜利ジェネレーター
 
+![CI](https://github.com/gnkm/oogiri-v3/actions/workflows/ci.yml/badge.svg)
+
 お題を与えると、大喜利の回答を返す。
 
 ## 開発
@@ -11,6 +13,11 @@ uv python install 3.13
 uv sync --all-groups
 uv run oogiri --help
 uv run pytest
+uv run ruff check src tests
+uv run ruff format --check src tests
+uv run lint-imports
+uv run radon cc src --show-complexity --average
+uv run xenon src --max-absolute A --max-modules A --max-average A
 ```
 
 配置はコード `src/`、プロンプト `prompts/`、設定 `config.toml`。秘密は設定ファイルに書かない。
