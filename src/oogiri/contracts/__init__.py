@@ -3,6 +3,7 @@
 from oogiri.contracts.analysis import AnalysisMemo
 from oogiri.contracts.candidates import Candidate, CandidateBatch
 from oogiri.contracts.roster import RespondentSpec, Roster, StyleAxis
+from oogiri.contracts.shortlist import Shortlist, TsukkomiNote
 
 __all__ = [
     "AnalysisMemo",
@@ -10,5 +11,7 @@ __all__ = [
     "CandidateBatch",
     "RespondentSpec",
     "Roster",
+    "Shortlist",
     "StyleAxis",
+    "TsukkomiNote",
 ]
