@@ -8,10 +8,19 @@ from __future__ import annotations
 import tomllib
 from pathlib import Path
 from typing import Any
+from urllib.parse import ParseResult, urlparse
 
-from pydantic import BaseModel, ConfigDict, Field, ValidationError, model_validator
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    ValidationError,
+    field_validator,
+    model_validator,
+)
 
 CONFIG_FILENAME = "config.toml"
+_OPENROUTER_HOST = "openrouter.ai"
 _SECRET_FIELD_MARKERS = ("api_key", "apikey")
 _NO_PLAINTEXT_KEY = (
     "設定ファイルに API キーを書いてはいけません。"
@@ -50,6 +59,16 @@ class OpenRouterConfig(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     base_url: str = Field(min_length=1)
+
+    @field_validator("base_url")
+    @classmethod
+    def must_be_openrouter_https(cls, value: str) -> str:
+        parsed = urlparse(value)
+        _require_https_scheme(parsed)
+        _require_openrouter_host(parsed)
+        _reject_url_userinfo(parsed)
+        _reject_non_https_port(parsed)
+        return value
 
 
 class AppConfig(BaseModel):
@@ -127,6 +146,26 @@ def _pop_secret_fields(value: dict[str, Any]) -> bool:
     for key in secret_keys:
         value.pop(key, None)
     return bool(secret_keys)
+
+
+def _require_https_scheme(parsed: ParseResult) -> None:
+    if parsed.scheme != "https":
+        raise ValueError("OpenRouter の URL は HTTPS である必要があります")
+
+
+def _require_openrouter_host(parsed: ParseResult) -> None:
+    if parsed.hostname != _OPENROUTER_HOST:
+        raise ValueError("OpenRouter 以外のホストは使えません")
+
+
+def _reject_url_userinfo(parsed: ParseResult) -> None:
+    if parsed.username or parsed.password:
+        raise ValueError("OpenRouter の URL にユーザー情報を含めてはいけません")
+
+
+def _reject_non_https_port(parsed: ParseResult) -> None:
+    if parsed.port not in (None, 443):
+        raise ValueError("OpenRouter の URL のポートが不正です")
 
 
 def _reject_secret_fields_in_mapping(value: dict[str, Any]) -> None:

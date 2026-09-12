@@ -1,8 +1,12 @@
-"""Typer エントリ。生成パイプラインは後続 Issue。"""
+"""Typer エントリ。`generate` はパイプラインを起動し、推敲後の 1 案を出す。"""
 
 from __future__ import annotations
 
 import typer
+
+from oogiri.config import ConfigError, load_config
+from oogiri.llm import LLMError, configure_gateway
+from oogiri.secrets import SecretError, require_openrouter_api_key
 
 app = typer.Typer(
     name="oogiri",
@@ -12,7 +16,6 @@ app = typer.Typer(
 
 DEFAULT_RESPONDENT_NUM = 3
 IMAGE_UNSUPPORTED_MESSAGE = "画像出力は MVP の対象外です。"
-PIPELINE_UNWIRED_MESSAGE = "生成パイプラインは未実装です。"
 
 
 @app.callback()
@@ -29,10 +32,18 @@ def _reject_image_flag(value: bool) -> bool:
 
 
 def handle_generate(*, theme: str, respondent_num: int) -> None:
-    """フラグ解析後の受け渡し。パイプライン本体は後続 Issue。"""
-    _ = (theme, respondent_num)
-    typer.echo(PIPELINE_UNWIRED_MESSAGE, err=True)
-    raise typer.Exit(code=1)
+    """フラグ解析後の受け渡し。キーが無ければ生成しない。"""
+    from oogiri.pipeline import PipelineError, generate_answer
+
+    try:
+        api_key = require_openrouter_api_key()
+        config = load_config()
+        configure_gateway(api_key=api_key, base_url=config.openrouter.base_url)
+        answer = generate_answer(theme, respondent_num, config=config)
+    except (SecretError, ConfigError, LLMError, PipelineError) as exc:
+        typer.echo(str(exc), err=True)
+        raise typer.Exit(code=1) from None
+    typer.echo(answer.text)
 
 
 @app.command()
