@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import re
 from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field, ValidationError, field_validator
@@ -18,6 +19,7 @@ RESPONDENT_PROMPT_FILE = "respondent.md"
 ROLE = "coordinator"
 DEFAULT_RESPONDENT_NUM = 3
 LOW_TEMPERATURE_MAX = 0.5
+_PLACEHOLDER_RE = re.compile(r"\{\{([a-z_]+)\}\}")
 
 
 class CoordinatorError(Exception):
@@ -78,13 +80,23 @@ def _ensure_respondent_temperature_is_high(config: AppConfig) -> None:
         raise CoordinatorError("回答者の温度は高温のままにする")
 
 
+def _fill_placeholders(template: str, values: dict[str, str]) -> str:
+    def replace(match: re.Match[str]) -> str:
+        return values.get(match.group(1), match.group(0))
+
+    return _PLACEHOLDER_RE.sub(replace, template)
+
+
 def _render_prompt(theme: str, analysis_memo: AnalysisMemo, respondent_num: int) -> str:
     template = load_prompt(PROMPT_FILE)
     memo_json = json.dumps(analysis_memo.model_dump(), ensure_ascii=False)
-    return (
-        template.replace("{{theme}}", theme)
-        .replace("{{respondent_num}}", str(respondent_num))
-        .replace("{{analysis_memo}}", memo_json)
+    return _fill_placeholders(
+        template,
+        {
+            "theme": theme,
+            "respondent_num": str(respondent_num),
+            "analysis_memo": memo_json,
+        },
     )
 
 
@@ -180,9 +192,17 @@ def _roster_from_parts(
 def _index_axes(axes: list[StyleAxis]) -> dict[str, StyleAxis]:
     indexed: dict[str, StyleAxis] = {}
     for axis in axes:
-        if axis.name not in indexed:
-            indexed[axis.name] = axis
+        _put_unique_axis(indexed, axis)
     return indexed
+
+
+def _put_unique_axis(indexed: dict[str, StyleAxis], axis: StyleAxis) -> None:
+    prev = indexed.get(axis.name)
+    if prev is None:
+        indexed[axis.name] = axis
+        return
+    if prev != axis:
+        raise CoordinatorError("同名で異なる軸定義があります")
 
 
 def _build_spec(
@@ -221,10 +241,27 @@ def _build_spec(
 def _resolve_axis(
     axis: StyleAxis | str, axes_by_name: dict[str, StyleAxis]
 ) -> StyleAxis:
-    name = axis.name if isinstance(axis, StyleAxis) else axis.strip()
-    if not name:
+    if isinstance(axis, StyleAxis):
+        return _resolve_axis_object(axis, axes_by_name)
+    return _resolve_axis_name(axis, axes_by_name)
+
+
+def _resolve_axis_object(
+    axis: StyleAxis, axes_by_name: dict[str, StyleAxis]
+) -> StyleAxis:
+    resolved = axes_by_name.get(axis.name)
+    if resolved is None:
+        raise CoordinatorError("回答者の軸が axes にありません")
+    if resolved != axis:
+        raise CoordinatorError("回答者の軸が axes と一致しません")
+    return resolved
+
+
+def _resolve_axis_name(name: str, axes_by_name: dict[str, StyleAxis]) -> StyleAxis:
+    stripped = name.strip()
+    if not stripped:
         raise CoordinatorError("回答者の軸が空です")
-    resolved = axes_by_name.get(name)
+    resolved = axes_by_name.get(stripped)
     if resolved is None:
         raise CoordinatorError("回答者の軸が axes にありません")
     return resolved
@@ -239,24 +276,25 @@ def _render_respondent_prompt(
     axis: StyleAxis,
     style_instructions: str,
 ) -> str:
-    return (
-        template.replace("{{theme}}", theme)
-        .replace("{{analysis_memo}}", memo_json)
-        .replace("{{respondent_id}}", respondent_id)
-        .replace("{{axis_name}}", axis.name)
-        .replace("{{axis_description}}", axis.description)
-        .replace("{{style_instructions}}", style_instructions)
+    return _fill_placeholders(
+        template,
+        {
+            "theme": theme,
+            "analysis_memo": memo_json,
+            "respondent_id": respondent_id,
+            "axis_name": axis.name,
+            "axis_description": axis.description,
+            "style_instructions": style_instructions,
+        },
     )
 
 
 def _ensure_drafts_differ(
     drafts: list[_RespondentDraft], axes_by_name: dict[str, StyleAxis]
 ) -> None:
-    if len(drafts) < 2:
-        return
-    signatures = {
+    signatures = [
         (_resolve_axis(item.axis, axes_by_name).name, item.style_text())
         for item in drafts
-    }
-    if len(signatures) == 1:
-        raise CoordinatorError("回答者が同じ軸・同じ指示に固まっています")
+    ]
+    if len(set(signatures)) != len(signatures):
+        raise CoordinatorError("回答者の軸と指示が重複しています")

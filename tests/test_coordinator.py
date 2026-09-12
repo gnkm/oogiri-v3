@@ -388,8 +388,100 @@ def test_identical_axis_and_prompt_is_rejected(fake_llm) -> None:
         ],
     }
     fake_llm.responses.append(json.dumps(payload, ensure_ascii=False))
-    with pytest.raises(CoordinatorError, match="固ま"):
+    with pytest.raises(CoordinatorError, match="重複"):
         coordinate("お題", _memo())
+
+
+def test_partial_duplicate_axis_and_prompt_is_rejected(fake_llm) -> None:
+    axis_a = _axis("極端な具体", "細部を拾う")
+    axis_b = _axis("視点の逆転", "主語を入れ替える")
+    payload = {
+        "axes": [axis_a, axis_b],
+        "respondents": [
+            {
+                "respondent_id": "r1",
+                "axis": axis_a,
+                "style_instructions": "同じ指示",
+            },
+            {
+                "respondent_id": "r2",
+                "axis": axis_a,
+                "style_instructions": "同じ指示",
+            },
+            {
+                "respondent_id": "r3",
+                "axis": axis_b,
+                "style_instructions": "別の指示",
+            },
+        ],
+    }
+    fake_llm.responses.append(json.dumps(payload, ensure_ascii=False))
+    with pytest.raises(CoordinatorError, match="重複"):
+        coordinate("お題", _memo())
+
+
+def test_mismatched_axis_description_is_rejected(fake_llm) -> None:
+    payload = _valid_roster_payload(n=3)
+    payload["respondents"][0]["axis"] = {
+        "name": payload["axes"][0]["name"],
+        "description": "まったく別の説明",
+    }
+    fake_llm.responses.append(json.dumps(payload, ensure_ascii=False))
+    with pytest.raises(CoordinatorError, match="一致しません"):
+        coordinate("お題", _memo())
+
+
+def test_conflicting_axis_definitions_are_rejected(fake_llm) -> None:
+    payload = _valid_roster_payload(n=3)
+    name = payload["axes"][0]["name"]
+    payload["axes"].append({"name": name, "description": "別の説明"})
+    fake_llm.responses.append(json.dumps(payload, ensure_ascii=False))
+    with pytest.raises(CoordinatorError, match="同名"):
+        coordinate("お題", _memo())
+
+
+def test_theme_placeholder_text_is_not_resubstituted(fake_llm) -> None:
+    theme = "これは {{analysis_memo}} を含むお題"
+    fake_llm.responses.append(json.dumps(_valid_roster_payload(), ensure_ascii=False))
+    coordinate(theme, _memo())
+    prompt = fake_llm.calls[0]["prompt"]
+    assert theme in prompt
+
+
+def test_style_instructions_are_not_resubstituted(fake_llm) -> None:
+    payload = _valid_roster_payload(n=3)
+    payload["respondents"][0]["style_instructions"] = "指示に {{theme}} を残す"
+    fake_llm.responses.append(json.dumps(payload, ensure_ascii=False))
+    roster = coordinate("お題", _memo())
+    assert "指示に {{theme}} を残す" in roster.respondents[0].system_prompt
+
+
+def test_roster_rejects_duplicate_respondent_ids() -> None:
+    axis = StyleAxis(name="極端な具体", description="細部を拾う")
+    spec = RespondentSpec(
+        respondent_id="r1",
+        axis=axis,
+        system_prompt="p",
+        model="openrouter/x",
+        temperature=0.9,
+    )
+    duplicate = spec.model_copy()
+    with pytest.raises(ValidationError, match="重複"):
+        Roster(axes=(axis,), respondents=(spec, duplicate))
+
+
+def test_roster_rejects_axis_not_in_axes() -> None:
+    listed = StyleAxis(name="極端な具体", description="細部を拾う")
+    other = StyleAxis(name="視点の逆転", description="主語を入れ替える")
+    spec = RespondentSpec(
+        respondent_id="r1",
+        axis=other,
+        system_prompt="p",
+        model="openrouter/x",
+        temperature=0.9,
+    )
+    with pytest.raises(ValidationError, match="axes"):
+        Roster(axes=(listed,), respondents=(spec,))
 
 
 def test_llm_non_json_is_rejected(fake_llm) -> None:
