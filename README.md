@@ -22,6 +22,34 @@ uv run xenon src --max-absolute A --max-modules A --max-average A
 
 配置はコード `src/`、プロンプト `prompts/`、設定 `config.toml`。秘密は設定ファイルに書かない。
 
+## 出力評価
+
+出力の質は DeepEval で見る（SRS-MVP-DC-008）。`oogiri generate` と Podman には載せない。
+既定の `uv run pytest` は MockJudge で通る。ライブ判定は `OPENROUTER_API_KEY` があるときだけ。
+面白さの絶対点は見ない。
+
+### 形検査（PolishedAnswerForm）
+
+お題に対する単一回答の形を見る。
+
+```sh
+uv run pytest tests/test_deepeval.py -k polished
+```
+
+### おもしろさ評価（HumorQuality）
+
+お題との噛み・オチ位置・凡庸回避を相対的に見る。面白さの絶対点は見ない。
+
+```sh
+uv run pytest tests/test_deepeval.py -k humor_quality
+```
+
+ライブ（secret があるとき）:
+
+```sh
+uv run pytest -o "addopts=-p no:deepeval" -m live tests/test_deepeval.py
+```
+
 ## 製品実行（Podman）
 
 OpenRouter API キーは `config.toml` に書かず、Podman secret `openrouter_api_key_oogiri` で渡す。
