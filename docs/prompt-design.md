@@ -33,11 +33,12 @@ MVP の 5 役割はいずれもテキストの分析・生成・審査・推敲�
 | --- | --- |
 | `prompts/seated_writer.md` | `{{theme}}` |
 | `prompts/coordinator.md` | `{{theme}}`、`{{respondent_num}}`、`{{analysis_memo}}` |
-| `prompts/respondent.md` | `{{theme}}`、`{{analysis_memo}}`、`{{axis_name}}`、`{{axis_description}}`、`{{style_instructions}}` |
+| `prompts/respondent.md` | `{{theme}}`、`{{analysis_memo}}`、`{{respondent_id}}`、`{{axis_name}}`、`{{axis_description}}`、`{{style_instructions}}` |
 | `prompts/tsukkomi.md` | `{{theme}}`、`{{analysis_memo}}`、`{{candidate_batch}}` |
 | `prompts/polisher.md` | `{{theme}}`、`{{shortlist}}` |
 
 `{{style_instructions}}` はコーディネーターが当該回答者向けに書いた芸風指示である。共通枠（`respondent.md`）は全回答者で同一とする。
+`{{respondent_id}}` は `RespondentSpec.respondent_id` である。`{{shortlist}}` はツッコミ役が返した `Shortlist` 全体ではなく、採択 5 案とそのツッコミだけを埋めた射影である（推敲役の節を見よ）。
 
 ## 温度の扱い
 
@@ -201,10 +202,12 @@ n 体が同じ軸に固まってはならない。少なくとも笑い方の方
 | --- | --- |
 | お題 | `{{theme}}` |
 | 分析メモ | `{{analysis_memo}}`（全員同一の `AnalysisMemo`） |
+| 自分の ID | `{{respondent_id}}`（`RespondentSpec.respondent_id`） |
 | 自分の軸 | `{{axis_name}}`、`{{axis_description}}` |
 | 芸風指示 | `{{style_instructions}}`（コーディネーターがこの体向けに書いたもの） |
 
 他回答者の `RespondentSpec`、他回答者の案、ツッコミ、推敲結果は渡さない。
+`respondent_id` の正はオーケストレータが渡した `RespondentSpec.respondent_id` とする。LLM 出力の ID が欠ける・食い違う場合は、検証前にその値で上書きする。
 
 ### 返させるもの
 
@@ -212,7 +215,7 @@ n 体が同じ軸に固まってはならない。少なくとも笑い方の方
 
 | フィールド | 型 | 制約 |
 | --- | --- | --- |
-| `respondent_id` | 文字列 | 渡された自分の ID |
+| `respondent_id` | 文字列 | `{{respondent_id}}` と同一 |
 | `candidates` | `Candidate` の配列 | **7 件以上** |
 
 `Candidate`:
@@ -220,7 +223,7 @@ n 体が同じ軸に固まってはならない。少なくとも笑い方の方
 | フィールド | 型 | 制約 |
 | --- | --- | --- |
 | `candidate_id` | 文字列 | 実行内で一意 |
-| `respondent_id` | 文字列 | 自分の ID |
+| `respondent_id` | 文字列 | `{{respondent_id}}` と同一 |
 | `text` | 文字列 | 大喜利の回答本文。空でない |
 
 各案はテキスト 1 本とする。箇条書きのネタ帳や画像指定は返さない。
@@ -298,9 +301,16 @@ n 体が同じ軸に固まってはならない。少なくとも笑い方の方
 | 項目 | 内容 |
 | --- | --- |
 | お題 | `{{theme}}` |
-| ショートリスト | `{{shortlist}}`（ツッコミ役が選んだ 5 案と各ツッコミ） |
+| ショートリスト | `{{shortlist}}`（採択 5 案と、それらのツッコミだけ） |
 
-5 案の本文は原案のまま渡す。ここで足さない。落選案は渡さない。
+`{{shortlist}}` に埋める範囲は次に限る。ツッコミ役が返した `Shortlist` 全体（残存全案の `notes`）を渡してはならない。
+
+| 項目 | 制約 |
+| --- | --- |
+| `selected` | `Shortlist.selected` の **ちょうど 5 件**。本文は原案のまま |
+| `notes` | `selected` の `candidate_id` に一致する `TsukkomiNote` だけ。ちょうど 5 件 |
+
+`dropped=true` の案、落選案の本文、落選理由のツッコミは渡さない。ここで内容を足さない。
 
 ### 返させるもの
 
