@@ -410,3 +410,13 @@ def test_prompt_body_is_not_embedded_in_src() -> None:
     assert PROMPT_MARKER in PROMPT_PATH.read_text(encoding="utf-8")
     for path in (ROOT / "src").rglob("*.py"):
         assert PROMPT_MARKER not in path.read_text(encoding="utf-8")
+
+
+def test_prompt_drops_long_and_template_answers() -> None:
+    text = PROMPT_PATH.read_text(encoding="utf-8")
+    assert "落とす" in text
+    assert "逆張り" in text
+    assert "時事" in text
+    assert "説明が長い" in text
+    assert "短縮" in text
+    assert "対話" in text

@@ -350,3 +350,13 @@ def test_candidate_model_is_frozen() -> None:
     candidate = Candidate.model_validate(_candidate("r1", 0))
     with pytest.raises(ValidationError):
         candidate.text = "書き換え"  # type: ignore[misc]
+
+
+def test_prompt_requires_one_phrase_answers() -> None:
+    text = PROMPT_PATH.read_text(encoding="utf-8")
+    assert "端的" in text
+    assert "1 句" in text
+    assert "体言止め" in text
+    assert "7 連打" in text
+    assert "と言うと" in text
+    assert "定義付け" in text

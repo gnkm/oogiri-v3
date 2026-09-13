@@ -536,3 +536,14 @@ def test_coordinator_temperature_is_configurable() -> None:
     cfg = load_config(ROOT / "config.toml")
     assert cfg.agents.coordinator.temperature == 0.4
     assert cfg.agents.respondent.temperature == 0.9
+
+
+def test_prompt_requires_brevity_in_style_instructions() -> None:
+    prompt = PROMPT_PATH.read_text(encoding="utf-8")
+    assert "前提の言い換え" in prompt
+    assert "1 句" in prompt
+    assert "体言止め" in prompt
+    assert "具体物 1 つ" in prompt
+    assert "対話禁止" in prompt
+    assert "次の三軸" not in prompt
+    assert "から選べ" not in prompt

@@ -237,3 +237,12 @@ def test_prompt_body_is_not_embedded_in_src() -> None:
     assert PROMPT_MARKER in PROMPT_PATH.read_text(encoding="utf-8")
     for path in (ROOT / "src").rglob("*.py"):
         assert PROMPT_MARKER not in path.read_text(encoding="utf-8")
+
+
+def test_prompt_strips_quotes_and_picks_shortest() -> None:
+    text = PROMPT_PATH.read_text(encoding="utf-8")
+    assert "引用符" in text
+    assert "導入" in text
+    assert "最短" in text
+    assert "別案の語" in text
+    assert "体言止め" in text
