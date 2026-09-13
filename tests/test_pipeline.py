@@ -253,6 +253,33 @@ def test_generate_answer_verbose_false_is_silent(
     assert "[oogiri]" not in blob
 
 
+def test_report_skips_formatter_when_disabled() -> None:
+    calls: list[object] = []
+
+    def formatter(payload: object) -> tuple[str, ...]:
+        calls.append(payload)
+        return ("should-not-print",)
+
+    reporter = ProgressReporter(enabled=False, stream=StringIO())
+    reporter.report(formatter, object())
+    assert calls == []
+
+
+def test_default_generate_does_not_format_batches(
+    fake_llm, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    calls: list[object] = []
+
+    def boom(batches: object) -> tuple[str, ...]:
+        calls.append(batches)
+        return ()
+
+    monkeypatch.setattr("oogiri.pipeline.batches_lines", boom)
+    _queue_pipeline(fake_llm, n=3)
+    generate_answer(THEME, 3, config=_config())
+    assert calls == []
+
+
 def test_generate_answer_verbose_reports_stages(fake_llm) -> None:
     _queue_pipeline(fake_llm, n=2)
     buf = StringIO()

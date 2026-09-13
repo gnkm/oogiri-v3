@@ -124,7 +124,7 @@ def _stage_analyze(
 ) -> AnalysisMemo:
     reporter.start(ROLE_SEATED_WRITER)
     memo = analyze(theme, config=config)
-    reporter.lines(memo_lines(memo))
+    reporter.report(memo_lines, memo)
     reporter.done(ROLE_SEATED_WRITER)
     return memo
 
@@ -138,7 +138,7 @@ def _stage_coordinate(
 ) -> Roster:
     reporter.start(ROLE_COORDINATOR)
     roster = coordinate(theme, memo, respondent_num, config=config)
-    reporter.lines(roster_lines(roster))
+    reporter.report(roster_lines, roster)
     reporter.done(ROLE_COORDINATOR)
     return roster
 
@@ -149,7 +149,7 @@ def _stage_respond(
     n = len(roster.respondents)
     reporter.start("回答者", f"({n} 体)")
     batches = respond(memo, roster)
-    reporter.lines(batches_lines(batches))
+    reporter.report(batches_lines, batches)
     reporter.done("回答者", f"({n} 体)")
     return batches
 
@@ -163,7 +163,7 @@ def _stage_review(
 ) -> Shortlist:
     reporter.start(ROLE_TSUKKOMI)
     shortlist = review(theme, memo, batches, config=config)
-    reporter.lines(shortlist_lines(shortlist))
+    reporter.report(shortlist_lines, shortlist)
     reporter.done(ROLE_TSUKKOMI)
     return shortlist
 
@@ -176,7 +176,7 @@ def _stage_polish(
 ) -> PolishedAnswer:
     reporter.start(ROLE_POLISHER)
     answer = polish(theme, shortlist, config=config)
-    reporter.lines(polished_lines(answer))
+    reporter.report(polished_lines, answer)
     reporter.done(ROLE_POLISHER)
     return answer
 

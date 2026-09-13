@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import sys
-from collections.abc import Iterable
+from collections.abc import Callable, Iterable
 from typing import TextIO
 
 from oogiri.contracts.analysis import AnalysisMemo
@@ -23,18 +23,27 @@ class ProgressReporter:
         self._stream = sys.stderr if stream is None else stream
 
     def start(self, role: str, extra: str = "") -> None:
+        if not self.enabled:
+            return
         self._emit(_status_line(role, "開始", extra))
 
     def done(self, role: str, extra: str = "") -> None:
+        if not self.enabled:
+            return
         self._emit(_status_line(role, "完了", extra))
 
+    def report(self, formatter: Callable[..., Iterable[str]], *args: object) -> None:
+        if not self.enabled:
+            return
+        self.lines(formatter(*args))
+
     def lines(self, rows: Iterable[str]) -> None:
+        if not self.enabled:
+            return
         for row in rows:
             self._emit(row)
 
     def _emit(self, line: str) -> None:
-        if not self.enabled:
-            return
         print(line, file=self._stream, flush=True)
 
 
