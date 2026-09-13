@@ -13,7 +13,7 @@
 
 | コンポーネント | 置き場 | 責務 |
 | --- | --- | --- |
-| CLI | `src/oogiri/cli.py` | Typer エントリ `oogiri`。`generate --theme` を受け、パイプラインを起動し、推敲後の 1 案を標準出力へ出す |
+| CLI | `src/oogiri/cli.py` | Typer エントリ `oogiri`。`generate --theme` を受け、パイプラインを起動し、推敲後の 1 案を標準出力へ出す。`--verbose` は診断用で、段階進捗を標準エラーへ出す |
 | 設定 | `src/oogiri/config.py` | ルートの `config.toml` を Pydantic で読む。エージェントごとのモデル・温度など |
 | 秘密 | `src/oogiri/secrets.py` | Podman secret 名 `openrouter_api_key_oogiri` から OpenRouter API キーを読む。平文でログ・設定・プロンプトへ出さない |
 | プロンプト読込 | `src/oogiri/prompts.py` | 本文は `prompts/` からのみ読む。`src/` に埋め込まない |
@@ -43,7 +43,7 @@ CrewAI の Agent / Task 名は上記役割と 1 対 1 にする。回答者だ�
 
 ```mermaid
 flowchart TB
-  CLI["oogiri generate --theme … [--respondent-num n]"]
+  CLI["oogiri generate --theme … [--respondent-num n] [--verbose]"]
   CFG["config.toml"]
   SEC["podman secret openrouter_api_key_oogiri"]
   PR["prompts/"]
@@ -86,7 +86,8 @@ flowchart TB
 6. **推敲役**  
    選ばれた 5 案に対し、削る・オチを文末へ移す・語尾を決める、のみ行う。内容は足さない。1 案にする。
 7. **テキスト出力**  
-   推敲後の 1 案だけを標準出力する。中間メモ・ツッコミ・落選案は既定では出さない。
+   推敲後の 1 案だけを標準出力する。中間メモ・ツッコミ・落選案は既定では出さない。  
+   `--verbose` は診断用フラグである。付けたときだけ、段階名と中間成果の要約を標準エラーへ出す。標準出力は推敲後 1 案のままにする。
 
 `--image` は製品機能ではない。指定されたら画像経路を走らせず、非 0 で終える。
 
@@ -114,6 +115,7 @@ flowchart TB
 │       ├── prompts.py
 │       ├── llm.py
 │       ├── pipeline.py
+│       ├── progress.py       # `--verbose` 時の段階進捗（既定は無出力）
 │       ├── agents/
 │       └── contracts/
 ├── tests/                   # pytest / DeepEval。OpenRouter は原則モック

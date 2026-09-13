@@ -16,8 +16,20 @@ from oogiri.agents.respondent import RespondentError, respond
 from oogiri.agents.seated_writer import AnalysisError, analyze
 from oogiri.agents.tsukkomi import TsukkomiError, review
 from oogiri.config import AgentLLMConfig, AppConfig, ConfigError, load_config
+from oogiri.contracts.analysis import AnalysisMemo
+from oogiri.contracts.candidates import CandidateBatch
 from oogiri.contracts.polished import PolishedAnswer
+from oogiri.contracts.roster import Roster
+from oogiri.contracts.shortlist import Shortlist
 from oogiri.llm import llm_for_role
+from oogiri.progress import (
+    ProgressReporter,
+    batches_lines,
+    memo_lines,
+    polished_lines,
+    roster_lines,
+    shortlist_lines,
+)
 from oogiri.prompts import PromptError
 
 DEFAULT_RESPONDENT_NUM = 3
@@ -75,13 +87,16 @@ def generate_answer(
     respondent_num: int = DEFAULT_RESPONDENT_NUM,
     *,
     config: AppConfig | None = None,
+    verbose: bool = False,
+    progress: ProgressReporter | None = None,
 ) -> PolishedAnswer:
     """座付き作家から推敲役までを走らせ、テキスト 1 案を返す。"""
     _require_positive_n(respondent_num)
     cfg = config if config is not None else load_config()
+    reporter = progress if progress is not None else ProgressReporter(enabled=verbose)
     build_crew(theme=theme, respondent_num=respondent_num, config=cfg)
     try:
-        return _run_stages(theme, respondent_num, cfg)
+        return _run_stages(theme, respondent_num, cfg, reporter)
     except _STAGE_ERRORS as exc:
         raise PipelineError(str(exc)) from exc
 
@@ -91,12 +106,79 @@ def _require_positive_n(respondent_num: int) -> None:
         raise PipelineError("回答者数は 1 以上である必要があります")
 
 
-def _run_stages(theme: str, respondent_num: int, config: AppConfig) -> PolishedAnswer:
+def _run_stages(
+    theme: str,
+    respondent_num: int,
+    config: AppConfig,
+    reporter: ProgressReporter,
+) -> PolishedAnswer:
+    memo = _stage_analyze(theme, config, reporter)
+    roster = _stage_coordinate(theme, memo, respondent_num, config, reporter)
+    batches = _stage_respond(memo, roster, reporter)
+    shortlist = _stage_review(theme, memo, batches, config, reporter)
+    return _stage_polish(theme, shortlist, config, reporter)
+
+
+def _stage_analyze(
+    theme: str, config: AppConfig, reporter: ProgressReporter
+) -> AnalysisMemo:
+    reporter.start(ROLE_SEATED_WRITER)
     memo = analyze(theme, config=config)
+    reporter.lines(memo_lines(memo))
+    reporter.done(ROLE_SEATED_WRITER)
+    return memo
+
+
+def _stage_coordinate(
+    theme: str,
+    memo: AnalysisMemo,
+    respondent_num: int,
+    config: AppConfig,
+    reporter: ProgressReporter,
+) -> Roster:
+    reporter.start(ROLE_COORDINATOR)
     roster = coordinate(theme, memo, respondent_num, config=config)
+    reporter.lines(roster_lines(roster))
+    reporter.done(ROLE_COORDINATOR)
+    return roster
+
+
+def _stage_respond(
+    memo: AnalysisMemo, roster: Roster, reporter: ProgressReporter
+) -> tuple[CandidateBatch, ...]:
+    n = len(roster.respondents)
+    reporter.start("回答者", f"({n} 体)")
     batches = respond(memo, roster)
+    reporter.lines(batches_lines(batches))
+    reporter.done("回答者", f"({n} 体)")
+    return batches
+
+
+def _stage_review(
+    theme: str,
+    memo: AnalysisMemo,
+    batches: tuple[CandidateBatch, ...],
+    config: AppConfig,
+    reporter: ProgressReporter,
+) -> Shortlist:
+    reporter.start(ROLE_TSUKKOMI)
     shortlist = review(theme, memo, batches, config=config)
-    return polish(theme, shortlist, config=config)
+    reporter.lines(shortlist_lines(shortlist))
+    reporter.done(ROLE_TSUKKOMI)
+    return shortlist
+
+
+def _stage_polish(
+    theme: str,
+    shortlist: Shortlist,
+    config: AppConfig,
+    reporter: ProgressReporter,
+) -> PolishedAnswer:
+    reporter.start(ROLE_POLISHER)
+    answer = polish(theme, shortlist, config=config)
+    reporter.lines(polished_lines(answer))
+    reporter.done(ROLE_POLISHER)
+    return answer
 
 
 def _agents(respondent_num: int, config: AppConfig) -> list[Agent]:
