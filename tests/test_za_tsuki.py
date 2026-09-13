@@ -180,3 +180,16 @@ def test_prompt_body_is_not_embedded_in_src() -> None:
     assert PROMPT_MARKER in PROMPT_PATH.read_text(encoding="utf-8")
     for path in (ROOT / "src").rglob("*.py"):
         assert PROMPT_MARKER not in path.read_text(encoding="utf-8")
+
+
+def test_prompt_treats_premises_as_type_conditions() -> None:
+    text = PROMPT_PATH.read_text(encoding="utf-8")
+    assert "型の条件" in text
+    assert "こんな X はいやだ。どんな X？" in text
+    assert "定義付け" in text
+    assert "笑いの仕組み" in text
+    assert "すぐ嘘" in text
+    assert "毎回間違える" in text
+    assert "逆を言う" in text
+    assert "命令無視" in text
+    assert "対話で説明する" in text
