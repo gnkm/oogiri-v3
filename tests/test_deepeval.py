@@ -134,7 +134,10 @@ def _live_openrouter_model():
 
     from oogiri.config import load_config
 
-    judge = load_config().eval.judge
+    cfg = load_config()
+    if cfg.eval is None:
+        pytest.skip("eval.judge が無い")
+    judge = cfg.eval.judge
     return OpenRouterModel(
         model=openrouter_model_id(judge.model),
         api_key=api_key,

@@ -86,7 +86,7 @@ class AppConfig(BaseModel):
 
     openrouter: OpenRouterConfig
     agents: AgentsConfig
-    eval: EvalConfig
+    eval: EvalConfig | None = None
 
     @model_validator(mode="before")
     @classmethod

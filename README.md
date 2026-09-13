@@ -11,6 +11,7 @@ Python 3.13 と [uv](https://docs.astral.sh/uv/) を使う。`uv pip` は使わ�
 ```sh
 uv python install 3.13
 uv sync --all-groups
+cp config.example.toml config.toml
 uv run oogiri --help
 uv run pytest
 uv run ruff check src tests
@@ -62,9 +63,15 @@ uv run pytest -o "addopts=-p no:deepeval" -m live tests/test_deepeval.py
 OpenRouter API キーは `config.toml` に書かず、Podman secret `openrouter_api_key_oogiri` で渡す。
 
 ```sh
-op item get 'OpenRouter API Key - oogiri' --field '認証情報' --reveal | podman secret create openrouter_api_key_oogiri -
+podman secret create openrouter_api_key_oogiri -
 podman build -t oogiri -f Containerfile
 podman run --rm --secret openrouter_api_key_oogiri oogiri --help
+```
+
+1Password を使う場合の例:
+
+```sh
+op item get 'OpenRouter API Key - oogiri' --field '認証情報' --reveal | podman secret create openrouter_api_key_oogiri -
 ```
 
 正本: [`docs/source-of-truth/srs-mvp.md`](docs/source-of-truth/srs-mvp.md)

@@ -20,6 +20,7 @@ def test_python_version_is_3_13() -> None:
 def test_layout_separates_src_prompts_and_config() -> None:
     assert (ROOT / "src").is_dir()
     assert (ROOT / "prompts").is_dir()
+    assert (ROOT / "config.example.toml").is_file()
     assert (ROOT / "config.toml").is_file()
     assert (ROOT / "pyproject.toml").is_file()
 

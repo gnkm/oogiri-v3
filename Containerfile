@@ -14,7 +14,8 @@ COPY --from=ghcr.io/astral-sh/uv:0.12.13 /uv /usr/local/bin/uv
 
 WORKDIR /app
 
-COPY pyproject.toml uv.lock README.md config.toml ./
+COPY pyproject.toml uv.lock README.md config.example.toml ./
+RUN cp config.example.toml config.toml
 COPY src ./src
 COPY prompts ./prompts
 
