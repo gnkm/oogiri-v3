@@ -170,3 +170,14 @@ def test_humor_quality_live_openrouter() -> None:
     assert metric.success is True
     assert metric.score is not None
     assert metric.score >= HUMOR_THRESHOLD
+
+
+@pytest.mark.live
+def test_humor_quality_live_bad_golden_fails() -> None:
+    """secret があるときだけ、悪い例を実判定器で閾値未満にする。"""
+    metric = make_humor_metric(model=_live_openrouter_model())
+    with pytest.raises(AssertionError, match=r"threshold: 0\.5"):
+        assert_test(humor_test_case(BAD_GOLDEN), [metric], run_async=False)
+    assert metric.success is False
+    assert metric.score is not None
+    assert metric.score < HUMOR_THRESHOLD
