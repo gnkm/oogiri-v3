@@ -27,6 +27,7 @@ def test_generate_help_exits_zero() -> None:
     assert "Usage" in output
     assert "--theme" in output
     assert "--respondent-num" in output
+    assert "--verbose" in output
 
 
 def test_generate_help_matches_srs_flags() -> None:
@@ -47,15 +48,17 @@ def test_theme_is_required() -> None:
 def test_theme_flag_is_accepted(monkeypatch: pytest.MonkeyPatch) -> None:
     captured: dict[str, object] = {}
 
-    def fake_handle(*, theme: str, respondent_num: int) -> None:
+    def fake_handle(*, theme: str, respondent_num: int, verbose: bool = False) -> None:
         captured["theme"] = theme
         captured["respondent_num"] = respondent_num
+        captured["verbose"] = verbose
 
     monkeypatch.setattr("oogiri.cli.handle_generate", fake_handle)
     result = runner.invoke(app, ["generate", "--theme", "猫がスマホを見ている"])
     assert result.exit_code == 0
     assert captured["theme"] == "猫がスマホを見ている"
     assert captured["respondent_num"] == DEFAULT_RESPONDENT_NUM
+    assert captured["verbose"] is False
 
 
 def test_respondent_num_defaults_to_three() -> None:
@@ -67,9 +70,10 @@ def test_respondent_num_defaults_to_three() -> None:
 def test_respondent_num_can_be_overridden(monkeypatch: pytest.MonkeyPatch) -> None:
     captured: dict[str, object] = {}
 
-    def fake_handle(*, theme: str, respondent_num: int) -> None:
+    def fake_handle(*, theme: str, respondent_num: int, verbose: bool = False) -> None:
         captured["theme"] = theme
         captured["respondent_num"] = respondent_num
+        captured["verbose"] = verbose
 
     monkeypatch.setattr("oogiri.cli.handle_generate", fake_handle)
     result = runner.invoke(
@@ -78,6 +82,19 @@ def test_respondent_num_can_be_overridden(monkeypatch: pytest.MonkeyPatch) -> No
     )
     assert result.exit_code == 0
     assert captured["respondent_num"] == 5
+    assert captured["verbose"] is False
+
+
+def test_verbose_flag_is_accepted(monkeypatch: pytest.MonkeyPatch) -> None:
+    captured: dict[str, object] = {}
+
+    def fake_handle(*, theme: str, respondent_num: int, verbose: bool = False) -> None:
+        captured["verbose"] = verbose
+
+    monkeypatch.setattr("oogiri.cli.handle_generate", fake_handle)
+    result = runner.invoke(app, ["generate", "--theme", "お題", "--verbose"])
+    assert result.exit_code == 0
+    assert captured["verbose"] is True
 
 
 def test_image_flag_exits_nonzero_without_image_output() -> None:

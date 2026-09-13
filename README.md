@@ -13,6 +13,7 @@ uv python install 3.13
 uv sync --all-groups
 cp config.example.toml config.toml
 uv run oogiri --help
+uv run oogiri generate --theme 'お題' --verbose
 uv run pytest
 uv run ruff check src tests
 uv run ruff format --check src tests
@@ -20,6 +21,8 @@ uv run lint-imports
 uv run radon cc src --show-complexity --average
 uv run xenon src --max-absolute A --max-modules A --max-average A
 ```
+
+途中経過は `--verbose` で標準エラーへ出す。標準出力は推敲後の 1 案のまま。
 
 配置はコード `src/`、プロンプト `prompts/`、設定 `config.toml`。秘密は設定ファイルに書かない。
 

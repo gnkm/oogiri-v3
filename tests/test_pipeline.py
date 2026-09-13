@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+from io import StringIO
 from pathlib import Path
 
 import click
@@ -21,6 +22,7 @@ from oogiri.pipeline import (
     generate_answer,
     pipeline_roles,
 )
+from oogiri.progress import ProgressReporter
 from oogiri.secrets import ENV_API_KEY
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -207,6 +209,95 @@ def test_cli_generate_prints_only_polished_text(
     assert "banal_ideas" not in blob
     assert "ツッコミ" not in result.stdout
     assert "AnalysisMemo" not in blob
+    assert ROLE_SEATED_WRITER not in blob
+    assert ROLE_COORDINATOR not in blob
+    assert ROLE_TSUKKOMI not in blob
+    assert ROLE_POLISHER not in blob
+    assert "[oogiri]" not in blob
+
+
+def test_cli_verbose_prints_stages_to_stderr(
+    fake_llm, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    _enable_key(monkeypatch)
+    _queue_pipeline(fake_llm, n=3)
+    result = runner.invoke(app, ["generate", "--theme", THEME, "--verbose"])
+    assert result.exit_code == 0
+    assert result.stdout.strip() == POLISHED_TEXT
+    assert result.stdout.strip().splitlines()[-1] == POLISHED_TEXT
+    err = click.unstyle(result.stderr)
+    assert ROLE_SEATED_WRITER in err
+    assert ROLE_COORDINATOR in err
+    assert "回答者: 開始" in err
+    assert "回答者: 完了" in err
+    assert ROLE_TSUKKOMI in err
+    assert ROLE_POLISHER in err
+    assert "お題の型" in err
+    assert "極端な具体" in err
+    assert "r1の案1" in err
+    assert "採択" in err
+    assert POLISHED_TEXT in err
+    assert TEST_KEY not in _plain(result)
+    assert TEST_KEY not in result.stdout
+    assert TEST_KEY not in result.stderr
+
+
+def test_generate_answer_verbose_false_is_silent(
+    fake_llm, capsys: pytest.CaptureFixture[str]
+) -> None:
+    _queue_pipeline(fake_llm, n=3)
+    generate_answer(THEME, 3, config=_config())
+    captured = capsys.readouterr()
+    blob = captured.out + captured.err
+    assert ROLE_SEATED_WRITER not in blob
+    assert "[oogiri]" not in blob
+
+
+def test_report_skips_formatter_when_disabled() -> None:
+    calls: list[object] = []
+
+    def formatter(payload: object) -> tuple[str, ...]:
+        calls.append(payload)
+        return ("should-not-print",)
+
+    reporter = ProgressReporter(enabled=False, stream=StringIO())
+    reporter.report(formatter, object())
+    assert calls == []
+
+
+def test_default_generate_does_not_format_batches(
+    fake_llm, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    calls: list[object] = []
+
+    def boom(batches: object) -> tuple[str, ...]:
+        calls.append(batches)
+        return ()
+
+    monkeypatch.setattr("oogiri.pipeline.batches_lines", boom)
+    _queue_pipeline(fake_llm, n=3)
+    generate_answer(THEME, 3, config=_config())
+    assert calls == []
+
+
+def test_generate_answer_verbose_reports_stages(fake_llm) -> None:
+    _queue_pipeline(fake_llm, n=2)
+    buf = StringIO()
+    reporter = ProgressReporter(enabled=True, stream=buf)
+    answer = generate_answer(THEME, 2, config=_config(), progress=reporter)
+    assert answer.text == POLISHED_TEXT
+    err = buf.getvalue()
+    assert f"{ROLE_SEATED_WRITER}: 開始" in err
+    assert f"{ROLE_COORDINATOR}: 開始" in err
+    assert "回答者: 開始 (2 体)" in err
+    assert f"{ROLE_TSUKKOMI}: 開始" in err
+    assert f"{ROLE_POLISHER}: 開始" in err
+    assert "前提 (3)" in err
+    assert "回答者: 2 体" in err
+    assert "r1: 7 案" in err
+    assert "採択 5" in err
+    assert f"推敲後: {POLISHED_TEXT}" in err
+    assert "system_prompt" not in err
 
 
 def test_cli_respondent_num_two(fake_llm, monkeypatch: pytest.MonkeyPatch) -> None:

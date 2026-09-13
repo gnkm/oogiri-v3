@@ -31,7 +31,7 @@ def _reject_image_flag(value: bool) -> bool:
     return value
 
 
-def handle_generate(*, theme: str, respondent_num: int) -> None:
+def handle_generate(*, theme: str, respondent_num: int, verbose: bool = False) -> None:
     """フラグ解析後の受け渡し。キーが無ければ生成しない。"""
     from oogiri.pipeline import PipelineError, generate_answer
 
@@ -39,7 +39,7 @@ def handle_generate(*, theme: str, respondent_num: int) -> None:
         api_key = require_openrouter_api_key()
         config = load_config()
         configure_gateway(api_key=api_key, base_url=config.openrouter.base_url)
-        answer = generate_answer(theme, respondent_num, config=config)
+        answer = generate_answer(theme, respondent_num, config=config, verbose=verbose)
     except (SecretError, ConfigError, LLMError, PipelineError) as exc:
         typer.echo(str(exc), err=True)
         raise typer.Exit(code=1) from None
@@ -68,6 +68,11 @@ def generate(
         is_eager=True,
         callback=_reject_image_flag,
     ),
+    verbose: bool = typer.Option(
+        False,
+        "--verbose",
+        help="段階ごとの進捗と中間成果を標準エラーへ出す",
+    ),
 ) -> None:
     """お題から大喜利の回答を生成する。"""
-    handle_generate(theme=theme, respondent_num=respondent_num)
+    handle_generate(theme=theme, respondent_num=respondent_num, verbose=verbose)
