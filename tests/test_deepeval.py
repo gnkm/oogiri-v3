@@ -80,12 +80,13 @@ def test_deepeval_live_openrouter_on_polished_fixture() -> None:
 
     from oogiri.config import load_config
 
-    model_id = openrouter_model_id(load_config().agents.polisher.model)
+    judge = load_config().eval.judge
+    model_id = openrouter_model_id(judge.model)
     metric = make_form_metric(
         model=OpenRouterModel(
             model=model_id,
             api_key=api_key,
-            temperature=0,
+            temperature=judge.temperature,
         )
     )
     assert_test(polished_test_case(), [metric], run_async=False)

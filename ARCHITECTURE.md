@@ -155,9 +155,14 @@ temperature = 0.2
 [agents.polisher]
 model = "openrouter/指定モデル"
 temperature = 0.2
+
+# DeepEval の判定役。GEval は logprobs を要求する。推論モデルは不可。
+[eval.judge]
+model = "openrouter/指定モデル"
+temperature = 0.0
 ```
 
-温度の数値は設計上の既定であり、座付き作家・ツッコミ役・推敲役は低温、回答者は高温を保つ。モデル ID の正は `config.toml` とし、コードに埋め込まない。
+温度の数値は設計上の既定であり、座付き作家・ツッコミ役・推敲役は低温、回答者は高温を保つ。モデル ID の正は `config.toml` とし、コードに埋め込まない。`eval.judge` は推敲役とは別で、GEval が要求する logprobs に対応したモデルにする。
 
 ### 秘密
 

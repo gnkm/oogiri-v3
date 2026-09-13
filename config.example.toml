@@ -23,3 +23,8 @@ temperature = 0.2
 [agents.polisher]
 model = "openrouter/openai/gpt-4o-mini"
 temperature = 0.2
+
+# DeepEval の判定役。GEval は logprobs を要求する。推論モデルは不可。
+[eval.judge]
+model = "openrouter/openai/gpt-4o-mini"
+temperature = 0.0

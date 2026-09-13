@@ -41,6 +41,10 @@ temperature = 0.2
 [agents.polisher]
 model = "openrouter/polisher-model"
 temperature = 0.2
+
+[eval.judge]
+model = "openrouter/eval-judge-model"
+temperature = 0.0
 """
 
 
@@ -63,6 +67,8 @@ def test_repo_config_has_per_agent_llm_settings() -> None:
         assert agent.model
         assert 0 <= agent.temperature <= 2
     assert cfg.openrouter.base_url.startswith("https://openrouter.ai/")
+    assert cfg.eval.judge.model
+    assert 0 <= cfg.eval.judge.temperature <= 2
 
 
 def test_each_agent_model_can_be_set_independently(tmp_path: Path) -> None:
@@ -74,6 +80,8 @@ def test_each_agent_model_can_be_set_independently(tmp_path: Path) -> None:
     assert cfg.agents.respondent.model == "openrouter/respondent-model"
     assert cfg.agents.respondent.temperature == 0.9
     assert cfg.agents.polisher.temperature == 0.2
+    assert cfg.eval.judge.model == "openrouter/eval-judge-model"
+    assert cfg.eval.judge.temperature == 0.0
 
 
 def test_api_key_in_config_is_rejected_without_leaking_value(
