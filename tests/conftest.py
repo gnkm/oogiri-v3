@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import os
 import threading
+from pathlib import Path
 from typing import Any
 
 os.environ.setdefault("DEEPEVAL_TELEMETRY_OPT_OUT", "1")
@@ -12,6 +13,17 @@ os.environ.setdefault("DEEPEVAL_DISABLE_DOTENV", "1")
 import pytest
 
 from oogiri.llm import LLMGateway
+
+_REPO_ROOT = Path(__file__).resolve().parents[1]
+_CONFIG = _REPO_ROOT / "config.toml"
+_CONFIG_EXAMPLE = _REPO_ROOT / "config.example.toml"
+
+
+def pytest_sessionstart(session: pytest.Session) -> None:  # noqa: ARG001
+    """追跡対象はテンプレート。クリーン環境ではそこから config.toml を作る。"""
+    if _CONFIG.is_file() or not _CONFIG_EXAMPLE.is_file():
+        return
+    _CONFIG.write_text(_CONFIG_EXAMPLE.read_text(encoding="utf-8"), encoding="utf-8")
 
 
 class FakeLLM(LLMGateway):

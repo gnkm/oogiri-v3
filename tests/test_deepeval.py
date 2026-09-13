@@ -124,9 +124,8 @@ def test_humor_quality_bad_golden_fails_below_threshold() -> None:
     assert metric.score < HUMOR_THRESHOLD
 
 
-@pytest.mark.live
-def test_polished_form_live_openrouter() -> None:
-    """secret があるときだけ OpenRouter で同じメトリクスを実行する。"""
+def _live_openrouter_model():
+    """GEval は logprobs を要求する。推論モデルの推敲役は使わない。"""
     api_key = os.environ.get(ENV_API_KEY, "").strip()
     if not api_key:
         pytest.skip(f"{ENV_API_KEY} が無い")
@@ -135,31 +134,25 @@ def test_polished_form_live_openrouter() -> None:
 
     from oogiri.config import load_config
 
-    model_id = openrouter_model_id(load_config().agents.polisher.model)
-    metric = make_form_metric(
-        model=OpenRouterModel(
-            model=model_id,
-            api_key=api_key,
-            temperature=0,
-        )
+    cfg = load_config()
+    if cfg.eval is None:
+        pytest.skip("eval.judge が無い")
+    judge = cfg.eval.judge
+    return OpenRouterModel(
+        model=openrouter_model_id(judge.model),
+        api_key=api_key,
+        temperature=judge.temperature,
     )
+
+
+@pytest.mark.live
+def test_polished_form_live_openrouter() -> None:
+    """secret があるときだけ OpenRouter で同じメトリクスを実行する。"""
+    metric = make_form_metric(model=_live_openrouter_model())
     assert_test(polished_test_case(), [metric], run_async=False)
     assert metric.success is True
     assert metric.score is not None
     assert metric.score >= THRESHOLD
-
-
-def _live_openrouter_model():
-    api_key = os.environ.get(ENV_API_KEY, "").strip()
-    if not api_key:
-        pytest.skip(f"{ENV_API_KEY} が無い")
-
-    from deepeval.models import OpenRouterModel
-
-    from oogiri.config import load_config
-
-    model_id = openrouter_model_id(load_config().agents.polisher.model)
-    return OpenRouterModel(model=model_id, api_key=api_key, temperature=0)
 
 
 @pytest.mark.live

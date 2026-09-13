@@ -13,6 +13,7 @@ from oogiri.config import (
     AgentLLMConfig,
     AgentsConfig,
     AppConfig,
+    EvalConfig,
     OpenRouterConfig,
     load_config,
 )
@@ -101,6 +102,9 @@ def _app_config(
             ),
             tsukkomi=low,
             polisher=low,
+        ),
+        eval=EvalConfig(
+            judge=_agent_cfg(model="openrouter/eval-judge", temperature=0.0)
         ),
     )
 

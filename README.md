@@ -11,6 +11,7 @@ Python 3.13 と [uv](https://docs.astral.sh/uv/) を使う。`uv pip` は使わ�
 ```sh
 uv python install 3.13
 uv sync --all-groups
+cp config.example.toml config.toml
 uv run oogiri --help
 uv run pytest
 uv run ruff check src tests
@@ -27,6 +28,10 @@ uv run xenon src --max-absolute A --max-modules A --max-average A
 出力の質は DeepEval で見る（SRS-MVP-DC-008）。`oogiri generate` と Podman には載せない。
 既定の `uv run pytest` は MockJudge で通る。ライブ判定は `OPENROUTER_API_KEY` があるときだけ。
 面白さの絶対点は見ない。
+
+判定モデルは `config.toml` の `[eval.judge]` である。GEval は logprobs を使うため、推論モデル（`gpt-6` など）は 400 になる。推敲役のモデルとは別にする。
+
+このリポジトリに評価用の画面（Web UI）は無い。結果はターミナルの pytest 出力である。
 
 ### 形検査（PolishedAnswerForm）
 
@@ -47,9 +52,12 @@ uv run pytest tests/test_deepeval.py -k humor_quality
 ライブ（secret があるとき）:
 
 ```sh
+export OPENROUTER_API_KEY=...
 uv run pytest -o "addopts=-p no:deepeval" -m live tests/test_deepeval.py
 ```
 
+`-o addopts=...` は、既定の「ライブ試験を集めない」設定を外すため。`-p no:deepeval` は DeepEval の pytest プラグインを使わないため（契約試験と混ぜない）。
+方針: [`docs/test-strategy.md`](docs/test-strategy.md)。
 ## 製品実行（Podman）
 
 OpenRouter API キーは `config.toml` に書かず、Podman secret `openrouter_api_key_oogiri` で渡す。
@@ -58,6 +66,12 @@ OpenRouter API キーは `config.toml` に書かず、Podman secret `openrouter_
 podman secret create openrouter_api_key_oogiri -
 podman build -t oogiri -f Containerfile
 podman run --rm --secret openrouter_api_key_oogiri oogiri --help
+```
+
+1Password を使う場合の例:
+
+```sh
+op item get 'OpenRouter API Key - oogiri' --field '認証情報' --reveal | podman secret create openrouter_api_key_oogiri -
 ```
 
 正本: [`docs/source-of-truth/srs-mvp.md`](docs/source-of-truth/srs-mvp.md)

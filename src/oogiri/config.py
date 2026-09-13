@@ -71,6 +71,14 @@ class OpenRouterConfig(BaseModel):
         return value
 
 
+class EvalConfig(BaseModel):
+    """DeepEval 判定役。GEval は logprobs を要求するため、推論モデルは使えない。"""
+
+    model_config = ConfigDict(extra="forbid")
+
+    judge: AgentLLMConfig
+
+
 class AppConfig(BaseModel):
     """`config.toml` の全体。"""
 
@@ -78,6 +86,7 @@ class AppConfig(BaseModel):
 
     openrouter: OpenRouterConfig
     agents: AgentsConfig
+    eval: EvalConfig | None = None
 
     @model_validator(mode="before")
     @classmethod

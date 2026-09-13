@@ -45,7 +45,9 @@ jobs:
         run: uv run xenon src --max-absolute A --max-modules A --max-average A
 
       - name: Pytest
-        run: uv run pytest
+        run: |
+          cp config.example.toml config.toml
+          uv run pytest
         env:
           DEEPEVAL_TELEMETRY_OPT_OUT: "1"
           DEEPEVAL_DISABLE_DOTENV: "1"

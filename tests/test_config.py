@@ -41,6 +41,10 @@ temperature = 0.2
 [agents.polisher]
 model = "openrouter/polisher-model"
 temperature = 0.2
+
+[eval.judge]
+model = "openrouter/eval-judge-model"
+temperature = 0.0
 """
 
 
@@ -50,19 +54,22 @@ def _write_toml(path: Path, body: str) -> Path:
 
 
 def test_repo_config_has_no_plaintext_key() -> None:
-    text = (ROOT / "config.toml").read_text(encoding="utf-8")
+    text = (ROOT / "config.example.toml").read_text(encoding="utf-8")
     lowered = text.lower()
     assert "api_key" not in lowered
     assert "apikey" not in lowered.replace("-", "")
 
 
 def test_repo_config_has_per_agent_llm_settings() -> None:
-    cfg = load_config(ROOT / "config.toml")
+    cfg = load_config(ROOT / "config.example.toml")
     for role in _AGENT_ROLES:
         agent = getattr(cfg.agents, role)
         assert agent.model
         assert 0 <= agent.temperature <= 2
     assert cfg.openrouter.base_url.startswith("https://openrouter.ai/")
+    assert cfg.eval is not None
+    assert cfg.eval.judge.model
+    assert 0 <= cfg.eval.judge.temperature <= 2
 
 
 def test_each_agent_model_can_be_set_independently(tmp_path: Path) -> None:
@@ -74,6 +81,17 @@ def test_each_agent_model_can_be_set_independently(tmp_path: Path) -> None:
     assert cfg.agents.respondent.model == "openrouter/respondent-model"
     assert cfg.agents.respondent.temperature == 0.9
     assert cfg.agents.polisher.temperature == 0.2
+    assert cfg.eval is not None
+    assert cfg.eval.judge.model == "openrouter/eval-judge-model"
+    assert cfg.eval.judge.temperature == 0.0
+
+
+def test_eval_section_is_optional(tmp_path: Path) -> None:
+    """生成経路は判定役を使わない。旧設定でも読める。"""
+    body = _VALID_TOML.split("[eval.judge]")[0]
+    path = _write_toml(tmp_path / "config.toml", body)
+    cfg = load_config(path)
+    assert cfg.eval is None
 
 
 def test_api_key_in_config_is_rejected_without_leaking_value(
