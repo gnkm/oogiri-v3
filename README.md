@@ -22,35 +22,41 @@ uv run xenon src --max-absolute A --max-modules A --max-average A
 
 配置はコード `src/`、プロンプト `prompts/`、設定 `config.toml`。秘密は設定ファイルに書かない。
 
-## 出力評価（DeepEval）
+## 出力評価
 
-評価は **開発機の pytest** で行う。Podman 上では動かさない。製品コンテナは `uv sync --no-dev` で DeepEval を入れておらず、`oogiri generate` は大喜利を出すだけである（[`ARCHITECTURE.md`](ARCHITECTURE.md)）。
+出力の質は DeepEval で見る（SRS-MVP-DC-008）。`oogiri generate` と Podman には載せない。
+既定の `uv run pytest` は MockJudge で通る。ライブ判定は `OPENROUTER_API_KEY` があるときだけ。
+面白さの絶対点は見ない。
 
-このリポジトリに評価用の画面（Web UI）は無い。結果はターミナルの pytest 出力である。DeepEval 公式のクラウド画面（[Confident AI](https://deepeval.com/docs/evaluation-introduction)）は、`deepeval login` 後に使えるが、ここでは pytest プラグインを切っているため接続していない。
+判定モデルは `config.toml` の `[eval.judge]` である。GEval は logprobs を使うため、推論モデル（`gpt-6` など）は 400 になる。推敲役のモデルとは別にする。
 
-### コマンド
+このリポジトリに評価用の画面（Web UI）は無い。結果はターミナルの pytest 出力である。
 
-いつもの試験（MockJudge。API キー不要。CI と同じ）:
+### 形検査（PolishedAnswerForm）
+
+お題に対する単一回答の形を見る。
 
 ```sh
-uv run pytest
+uv run pytest tests/test_deepeval.py -k polished_form
 ```
 
-本物の OpenRouter で同じメトリクスを回す（キーが無ければ skip）:
+### おもしろさ評価（HumorQuality）
+
+お題との噛み・オチ位置・凡庸回避を相対的に見る。面白さの絶対点は見ない。
+
+```sh
+uv run pytest tests/test_deepeval.py -k humor_quality
+```
+
+ライブ（secret があるとき）:
 
 ```sh
 export OPENROUTER_API_KEY=...
 uv run pytest -o "addopts=-p no:deepeval" -m live tests/test_deepeval.py
 ```
 
-判定モデルは `config.toml` の `[eval.judge]` である。GEval は logprobs を使うため、推論モデル（`gpt-6` など）は 400 になる。推敲役のモデルとは別にする。
-
 `-o addopts=...` は、既定の「ライブ試験を集めない」設定を外すため。`-p no:deepeval` は DeepEval の pytest プラグインを使わないため（契約試験と混ぜない）。
-
-見るもの: 推敲後 1 案が「お題に対する単一の回答の形か」（GEval `PolishedAnswerForm`、閾値 0.5）。面白さの点数は見ない。今はフィクスチャを採点する。`generate` の本番出力を評価するサブコマンドは無い。
-
-方針: [`docs/test-strategy.md`](docs/test-strategy.md)。コード: `tests/eval/polished_form.py`、`tests/test_deepeval.py`。
-
+方針: [`docs/test-strategy.md`](docs/test-strategy.md)。
 ## 製品実行（Podman）
 
 OpenRouter API キーは `config.toml` に書かず、Podman secret `openrouter_api_key_oogiri` で渡す。
